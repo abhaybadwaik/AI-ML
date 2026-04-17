@@ -1,5 +1,4 @@
 # 👉 A complete AI Assistant with:
-
 # ✅ Chat (LLM)
 # ✅ Calculator tool ➗
 # ✅ Memory 🧠

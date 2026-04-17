@@ -21,6 +21,7 @@ def researcher(state):
     state["research"] = response.content
     return state
 
+
 # 🤖 Agent 2 → Summarizer
 def summarizer(state):
     research = state["research"]
