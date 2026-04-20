@@ -1,89 +1,99 @@
-from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.memory import MemorySaver
-from langgraph.types import interrupt, Command
-from typing import TypedDict
+import os
+from dotenv import load_dotenv
+from langgraph.graph import StateGraph
+from langchain_groq import ChatGroq
+from dotenv import load_dotenv
+import os
 
-# --- State ---
-class State(TypedDict):
-    topic: str
-    draft: str
-    approved: bool
-    feedback: str
+# 🔑 Load API
+load_dotenv()
 
-# --- Node 1: Agent drafts an email based on YOUR topic ---
-def draft_email(state: State):
-    topic = state["topic"]
-    draft = f"Subject: {topic}\n\nHi team,\n\nThis is a reminder about: {topic}.\nPlease take necessary action.\n\nRegards,\nAI Assistant"
-    print(f"\n📝 Agent drafted this email:\n")
-    print("─" * 40)
-    print(draft)
-    print("─" * 40)
-    return {"draft": draft}
+llm = ChatGroq(
+    model="llama-3.1-8b-instant",
+    api_key=os.getenv("GROQ_API_KEY")
+)
 
-# --- Node 2: Human reviews ---
-def human_review(state: State):
-    decision = interrupt("waiting_for_human")
-    return {"approved": decision["approved"], "feedback": decision["feedback"]}
 
-# --- Node 3: Final action ---
-def send_or_cancel(state: State):
-    if state["approved"]:
-        print(f"\n✅ Email SENT successfully!")
-        print(f"📨 Final email:\n{state['draft']}")
+# 🤖 Step 1: Generate Email Draft
+def generate_draft(state):
+    prompt = f"Write a professional email for: {state['input']}"
+    response = llm.invoke(prompt)
+
+    state["draft"] = response.content
+    return state
+
+# 👨 Step 2: Human Review
+def human_review(state):
+    print("\n📧 AI Draft:\n", state["draft"])
+    
+    approval = input("\nApprove this email? (yes/no): ")
+    feedback = ""
+
+    if approval == "no":
+        feedback = input("What should be improved?: ")
+
+    state["approved"] = approval
+    state["feedback"] = feedback
+    return state
+
+# 🧠 Step 3: Decision
+def decision(state):
+    if state["approved"] == "yes":
+        return "final"
     else:
-        print(f"\n❌ Email CANCELLED.")
-        print(f"💬 Your feedback was: {state['feedback']}")
-        print("🔁 In a real system, the agent would redraft based on your feedback.")
-    return {}
+        return "improve"
 
-# --- Build graph ---
-builder = StateGraph(State)
-builder.add_node("draft_email", draft_email)
+# 🔁 Step 4: Improve Draft using feedback
+def improve_draft(state):
+    prompt = f"""
+    Improve this email based on feedback:
+    
+    Email:
+    {state['draft']}
+    
+    Feedback:
+    {state['feedback']}
+    """
+
+    response = llm.invoke(prompt)
+
+    state["draft"] = response.content
+    return state
+
+# ✅ Final Step
+def final(state):
+    state["result"] = state["draft"]
+    return state
+
+# 🔧 Build Graph
+builder = StateGraph(dict)
+
+builder.add_node("generate_draft", generate_draft)
 builder.add_node("human_review", human_review)
-builder.add_node("send_or_cancel", send_or_cancel)
+builder.add_node("improve", improve_draft)
+builder.add_node("final", final)
 
-builder.add_edge(START, "draft_email")
-builder.add_edge("draft_email", "human_review")
-builder.add_edge("human_review", "send_or_cancel")
-builder.add_edge("send_or_cancel", END)
+builder.set_entry_point("generate_draft")
 
-memory = MemorySaver()
-graph = builder.compile(checkpointer=memory)
+builder.add_edge("generate_draft", "human_review")
 
-# --- MAIN INTERACTIVE FLOW ---
-print("=" * 50)
-print("   HUMAN-IN-THE-LOOP EMAIL AGENT")
-print("=" * 50)
+builder.add_conditional_edges(
+    "human_review",
+    decision,
+    {
+        "final": "final",
+        "improve": "improve"
+    }
+)
 
-# Step 1: Take topic from user
-topic = input("\n📌 Enter email topic (e.g. 'Team meeting tomorrow at 3pm'): ").strip()
+builder.add_edge("improve", "human_review")
 
-config = {"configurable": {"thread_id": "hitl-test-1"}}
+graph = builder.compile()
 
-# Step 2: Run graph — it will pause at interrupt()
-print("\n🤖 Agent is drafting your email...\n")
-for event in graph.stream({"topic": topic, "draft": "", "approved": False, "feedback": ""}, config):
-    if "__interrupt__" in event:
-        print("\n⏸️  Graph PAUSED — waiting for your review.")
+# 🚀 Run
+user_input = input("Enter email topic: ")
 
-# Step 3: Human reviews and decides
-print("\n👀 What do you want to do?")
-print("   Type 'yes' to APPROVE and send")
-print("   Type 'no'  to REJECT and cancel")
-choice = input("\nYour decision: ").strip().lower()
+result = graph.invoke({"input": user_input})
 
-if choice == "yes":
-    resume_value = {"approved": True, "feedback": ""}
-else:
-    feedback = input("💬 Enter your feedback (why rejected?): ").strip()
-    resume_value = {"approved": False, "feedback": feedback}
-
-# Step 4: Resume the graph with human's decision
-print("\n▶️  Resuming graph with your decision...\n")
-for event in graph.stream(Command(resume=resume_value), config):
-    if "__interrupt__" not in event:
-        pass
-
-print("\n" + "=" * 50)
-print("   GRAPH COMPLETED")
-print("=" * 50)
+print("\n✅ Final Approved Email:\n")
+print(result["result"])
