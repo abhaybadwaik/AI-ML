@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
-
 # 🔑 Load API key
 load_dotenv()
 
