@@ -57,3 +57,5 @@ while True:
 
     # 🔥 Save checkpoint
     save_memory(history)
+
+    
