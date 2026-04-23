@@ -36,6 +36,7 @@ system_prompt = {
     "content": "You remember all past user details and answer confidently based on conversation history. Do not say you don't remember."
 }
 
+
 while True:
     user_input = input("\nYou: ")
 
