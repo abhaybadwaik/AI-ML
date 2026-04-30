@@ -1,7 +1,10 @@
 from apscheduler.schedulers.blocking import BlockingScheduler
 from datetime import datetime, timezone
+from threading import Thread
 from agent import graph, ClusterState
 from config import settings
+from dashboard import update_dashboard, run_dashboard
+
 
 def run_monitoring_cycle():
     """Single monitoring cycle — collect, analyze, report, email."""
@@ -14,22 +17,17 @@ def run_monitoring_cycle():
         timestamp=datetime.now(timezone.utc).isoformat(),
         collected_at="",
         collection_errors=[],
-        nodes=[],
-        operators=[],
-        mcpools=[],
-        etcd={},
-        pvcs=[],
-        pods=[],
-        certs=[],
-        failures=[],
-        resolutions=[],
-        summary="",
-        report_html="",
-        email_sent=False
+        nodes=[], operators=[], mcpools=[],
+        etcd={}, pvcs=[], pods=[], certs=[],
+        failures=[], resolutions=[],
+        summary="", report_html="", email_sent=False
     )
 
     try:
         result = graph.invoke(initial_state)
+
+        # Update dashboard with latest result
+        update_dashboard(result)
 
         print("\n" + "="*60)
         print("  CYCLE COMPLETE")
@@ -44,30 +42,31 @@ def run_monitoring_cycle():
         print(f"\n  ❌ Cycle failed: {e}")
 
 
-# ─────────────────────────────────────────────
-# Scheduler setup
-# ─────────────────────────────────────────────
 if __name__ == "__main__":
-    scheduler = BlockingScheduler(timezone=settings.timezone)
+    # Start dashboard in background thread
+    print("="*60)
+    print("  Starting dashboard on http://localhost:5000")
+    dashboard_thread = Thread(target=run_dashboard, daemon=True)
+    dashboard_thread.start()
 
-    # Add monitoring job
+    # Start scheduler
+    scheduler = BlockingScheduler(timezone=settings.timezone)
     scheduler.add_job(
         run_monitoring_cycle,
         trigger="interval",
         minutes=settings.interval_minutes,
         id="ocp_monitor",
-        next_run_time=datetime.now()  # Run immediately on start
+        next_run_time=datetime.now()
     )
 
-    print("="*60)
     print("  OCP AI MONITORING AGENT STARTED")
-    print(f"  Interval : every {settings.interval_minutes} minutes")
-    print(f"  Timezone : {settings.timezone}")
+    print(f"  Interval  : every {settings.interval_minutes} minutes")
+    print(f"  Dashboard : http://localhost:5000")
     print(f"  Press Ctrl+C to stop")
     print("="*60)
 
     try:
         scheduler.start()
     except KeyboardInterrupt:
-        print("\n  Agent stopped by user.")
+        print("\n  Agent stopped.")
         scheduler.shutdown()
