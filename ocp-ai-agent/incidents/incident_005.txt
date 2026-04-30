@@ -1,0 +1,33 @@
+Date: 2026-03-25
+Title: MachineConfigPool Degraded
+Severity: WARNING
+Component: MachineConfigPool
+
+Problem:
+Worker MachineConfigPool showing 2 degraded machines after
+a MachineConfig update was applied.
+
+Root Cause:
+Two worker nodes failed to apply the new MachineConfig due to
+insufficient disk space in /boot partition.
+
+Resolution Steps:
+1. Check MCP status:
+   oc get mcp
+   oc describe mcp worker
+
+2. Check which nodes are degraded:
+   oc get nodes
+
+3. SSH to degraded node and check /boot:
+   df -h /boot
+
+4. Clean old kernel versions:
+   rpm -qa kernel | sort
+   dnf remove old-kernel-version
+
+5. Force MachineConfig re-apply:
+   oc patch node <node-name> -p '{"metadata":{"annotations":{"machineconfiguration.openshift.io/reason":""}}}'
+
+Outcome: Resolved after cleaning /boot partition.
+Time to resolve: 1 hour

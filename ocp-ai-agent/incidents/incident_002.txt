@@ -1,0 +1,32 @@
+Date: 2026-02-03
+Title: Worker Node NotReady
+Severity: CRITICAL
+Component: nodes
+
+Problem:
+worker02.ocp.eidikointernal.com went into NotReady state during
+peak hours causing workload disruption.
+
+Root Cause:
+kubelet service crashed due to disk pressure on the node.
+/var/lib/containers was 95% full causing kubelet to stop.
+
+Resolution Steps:
+1. Check node status and conditions:
+   oc get nodes
+   oc describe node worker02.ocp.eidikointernal.com
+
+2. SSH into the node and check disk usage:
+   df -h /var/lib/containers
+
+3. Clean up unused container images:
+   crictl rmi --prune
+
+4. Restart kubelet:
+   systemctl restart kubelet
+
+5. Verify node returns to Ready:
+   oc get nodes -w
+
+Outcome: Resolved. Node returned to Ready after disk cleanup.
+Time to resolve: 30 minutes

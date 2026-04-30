@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: Arial, sans-serif; font-size: 13px;
+          color: #212121; margin: 0; padding: 20px; background: #f5f5f5; }
+  .container { max-width: 900px; margin: 0 auto; background: white;
+                border-radius: 8px; overflow: hidden;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .header { background: #1a237e; color: white; padding: 25px 30px; }
+  .header h1 { margin: 0; font-size: 22px; }
+  .header p { margin: 5px 0 0; opacity: 0.8; font-size: 13px; }
+  .status-banner { background: #f57c00; color: white;
+                    padding: 12px 30px; font-size: 16px; font-weight: bold; }
+  .content { padding: 25px 30px; }
+  .section { margin-bottom: 30px; }
+  .section h2 { font-size: 15px; color: #1a237e; border-bottom: 2px solid #e8eaf6;
+                 padding-bottom: 8px; margin-bottom: 15px; }
+  .summary-box { background: #e8eaf6; border-left: 4px solid #1a237e;
+                  padding: 15px; border-radius: 4px; line-height: 1.6; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: #1a237e; color: white; padding: 8px 10px; text-align: left; }
+  td { padding: 7px 10px; border-bottom: 1px solid #e0e0e0; }
+  tr:nth-child(even) { background: #f5f5f5; }
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;
+                margin-bottom: 20px; }
+  .stat-card { background: #e8eaf6; border-radius: 6px; padding: 15px;
+                text-align: center; }
+  .stat-card .num { font-size: 28px; font-weight: bold; color: #1a237e; }
+  .stat-card .label { font-size: 11px; color: #666; margin-top: 4px; }
+  .footer { background: #f5f5f5; padding: 15px 30px; font-size: 11px;
+             color: #888; border-top: 1px solid #e0e0e0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>🖥️ OCP Platform Health Check Report</h1>
+    <p>Generated: 2026-04-30T09:29:01.482738+00:00 | Cluster: ocp.eidikointernal.com</p>
+  </div>
+
+  <!-- Status Banner -->
+  <div class="status-banner">
+    Overall Status: WARNING
+    &nbsp;|&nbsp; Failures: 1
+    &nbsp;|&nbsp; Warnings: 1
+    &nbsp;|&nbsp; Critical: 0
+  </div>
+
+  <div class="content">
+
+    <!-- Stats -->
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="num">7</div>
+        <div class="label">Total Nodes</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">7</div>
+        <div class="label">Nodes Ready</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">34</div>
+        <div class="label">Operators</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="color:#388e3c">0</div>
+        <div class="label">Degraded Ops</div>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="section">
+      <h2>📋 AI Analysis Summary</h2>
+      <div class="summary-box">The cluster is generally healthy, but there is a warning regarding the monitoring component running without persistent storage for Prometheus, which could lead to data loss during upgrades or disruptions.</div>
+    </div>
+
+    <!-- Failures -->
+    <div class="section">
+      <h2>🚨 Failures & Remediation</h2>
+      
+            <div style="border:1px solid #f57c00;border-radius:6px;
+                        margin-bottom:15px;overflow:hidden">
+                <div style="background:#f57c00;color:white;padding:10px 15px">
+                    <strong>[WARNING]</strong> monitoring
+                </div>
+                <div style="padding:15px">
+                    <p><strong>Issue:</strong> Prometheus is running without persistent storage which can lead to data loss during upgrades and cluster disruptions.</p>
+                    <p><strong>Root Cause:</strong> Prometheus is not configured with persistent storage, which can cause data loss during upgrades or cluster disruptions.</p>
+                    <p><strong>Steps:</strong></p><ol><li>Step 1: Create a Persistent Volume Claim (PVC) for Prometheus</li><li>Step 2: Update the Prometheus configuration to use the PVC for storage</li><li>Step 3: Verify that Prometheus is using the persistent storage</li></ol>
+                    <p><strong>Commands:</strong></p><code style='display:block;background:#263238;color:#80cbc4;padding:4px 8px;margin:2px 0;border-radius:3px;font-size:12px'>oc get pvc -n openshift-monitoring</code><code style='display:block;background:#263238;color:#80cbc4;padding:4px 8px;margin:2px 0;border-radius:3px;font-size:12px'>oc describe deployment prometheus-k8s -n openshift-monitoring</code><code style='display:block;background:#263238;color:#80cbc4;padding:4px 8px;margin:2px 0;border-radius:3px;font-size:12px'>oc patch deploy prometheus-k8s -n openshift-monitoring -p='{"spec":{"template":{"spec":{"volumes":[{"name":"prometheus-storage","persistentVolumeClaim":{"claimName":"prometheus-pvc"}}]}}}}'</code>
+                    <p><strong>Docs:</strong> <a href='https://docs.openshift.com/container-platform/4.11/monitoring/monitoring-persistent-storage.html'>https://docs.openshift.com/container-platform/4.11/monitoring/monitoring-persistent-storage.html</a></p>
+                </div>
+            </div>
+    </div>
+
+    <!-- Nodes -->
+    <div class="section">
+      <h2>🖥️ Node Status</h2>
+      <table>
+        <tr><th>Node</th><th>Role</th><th>Status</th><th>Issues</th></tr>
+        
+        <tr>
+            <td>master1.ocp.eidikointernal.com</td>
+            <td>control-plane, master</td>
+            <td style="color:#388e3c;font-weight:bold">Ready</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>master2.ocp.eidikointernal.com</td>
+            <td>control-plane, master</td>
+            <td style="color:#388e3c;font-weight:bold">Ready</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>master3.ocp.eidikointernal.com</td>
+            <td>control-plane, master</td>
+            <td style="color:#388e3c;font-weight:bold">Ready</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>worker01.ocp.eidikointernal.com</td>
+            <td>worker</td>
+            <td style="color:#388e3c;font-weight:bold">Ready</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>worker02.ocp.eidikointernal.com</td>
+            <td>worker</td>
+            <td style="color:#388e3c;font-weight:bold">Ready</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>worker03.ocp.eidikointernal.com</td>
+            <td>worker</td>
+            <td style="color:#388e3c;font-weight:bold">Ready</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>worker4.ocp.eidikointernal.com</td>
+            <td>worker</td>
+            <td style="color:#388e3c;font-weight:bold">Ready</td>
+            <td>None</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Operators -->
+    <div class="section">
+      <h2>⚙️ Cluster Operators (34)</h2>
+      <table>
+        <tr><th>Operator</th><th>Available</th><th>Degraded</th><th>Message</th></tr>
+        
+        <tr>
+            <td>authentication</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">All is well</td>
+        </tr>
+        <tr>
+            <td>baremetal</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px"></td>
+        </tr>
+        <tr>
+            <td>cloud-controller-manager</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px"></td>
+        </tr>
+        <tr>
+            <td>cloud-credential</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">All is well</td>
+        </tr>
+        <tr>
+            <td>cluster-autoscaler</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px"></td>
+        </tr>
+        <tr>
+            <td>config-operator</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">All is well</td>
+        </tr>
+        <tr>
+            <td>console</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">All is well</td>
+        </tr>
+        <tr>
+            <td>control-plane-machine-set</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px"></td>
+        </tr>
+        <tr>
+            <td>csi-snapshot-controller</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">All is well</td>
+        </tr>
+        <tr>
+            <td>dns</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px"></td>
+        </tr>
+        <tr>
+            <td>etcd</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">NodeControllerDegraded: All master nodes are ready
+EtcdMembersDegraded: No unhea</td>
+        </tr>
+        <tr>
+            <td>image-registry</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px"></td>
+        </tr>
+        <tr>
+            <td>ingress</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">The "default" ingress controller reports Degraded=False.</td>
+        </tr>
+        <tr>
+            <td>insights</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">Insights works as expected</td>
+        </tr>
+        <tr>
+            <td>kube-apiserver</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">NodeControllerDegraded: All master nodes are ready</td>
+        </tr>
+        <tr>
+            <td>kube-controller-manager</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">NodeControllerDegraded: All master nodes are ready</td>
+        </tr>
+        <tr>
+            <td>kube-scheduler</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">NodeControllerDegraded: All master nodes are ready</td>
+        </tr>
+        <tr>
+            <td>kube-storage-version-migrator</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">All is well</td>
+        </tr>
+        <tr>
+            <td>machine-api</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px"></td>
+        </tr>
+        <tr>
+            <td>machine-approver</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px"></td>
+        </tr>
+        <tr>
+            <td>machine-config</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px"></td>
+        </tr>
+        <tr>
+            <td>marketplace</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">Available release version: 4.18.32</td>
+        </tr>
+        <tr>
+            <td>monitoring</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">Prometheus is running without persistent storage which can lead to data loss dur</td>
+        </tr>
+        <tr>
+            <td>network</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px"></td>
+        </tr>
+        <tr>
+            <td>node-tuning</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">DaemonSet "tuned" available</td>
+        </tr>
+        <tr>
+            <td>olm</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">All is well</td>
+        </tr>
+        <tr>
+            <td>openshift-apiserver</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">All is well</td>
+        </tr>
+        <tr>
+            <td>openshift-controller-manager</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">All is well</td>
+        </tr>
+        <tr>
+            <td>openshift-samples</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px"></td>
+        </tr>
+        <tr>
+            <td>operator-lifecycle-manager</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px"></td>
+        </tr>
+        <tr>
+            <td>operator-lifecycle-manager-catalog</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px"></td>
+        </tr>
+        <tr>
+            <td>operator-lifecycle-manager-packageserver</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px"></td>
+        </tr>
+        <tr>
+            <td>service-ca</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">All is well</td>
+        </tr>
+        <tr>
+            <td>storage</td>
+            <td style="color:#388e3c;font-weight:bold">True</td>
+            <td style="color:#388e3c;font-weight:bold">False</td>
+            <td style="font-size:11px">All is well</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- MCP -->
+    <div class="section">
+      <h2>🔧 MachineConfigPools</h2>
+      <table>
+        <tr><th>Pool</th><th>Total</th><th>Ready</th><th>Degraded</th></tr>
+        
+        <tr>
+            <td>master</td>
+            <td>3</td>
+            <td>3</td>
+            <td style="color:#388e3c;font-weight:bold">0</td>
+        </tr>
+        <tr>
+            <td>worker</td>
+            <td>4</td>
+            <td>4</td>
+            <td style="color:#388e3c;font-weight:bold">0</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- etcd -->
+    <div class="section">
+      <h2>🗄️ etcd Health</h2>
+      <div style="background:#f5f5f5;padding:12px;border-radius:4px">
+        Status: <strong style="color:#388e3c">Healthy</strong>
+      </div>
+    </div>
+
+    <!-- PVCs -->
+    <div class="section">
+      <h2>💾 PVC Issues</h2>
+      <table>
+        <tr><th>Name</th><th>Namespace</th><th>Phase</th><th>Capacity</th></tr>
+        <tr><td colspan='4' style='color:#388e3c'>No PVC issues found</td></tr>
+      </table>
+    </div>
+
+    <!-- Failing Pods -->
+    <div class="section">
+      <h2>🐛 Failing Pods</h2>
+      <table>
+        <tr><th>Pod</th><th>Namespace</th><th>Reason</th><th>Restarts</th></tr>
+        <tr><td colspan='4' style='color:#388e3c'>No failing pods found</td></tr>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    Auto-generated by OCP AI Monitoring Agent &nbsp;|&nbsp;
+    Powered by LangGraph + LangChain + Groq LLaMA &nbsp;|&nbsp;
+    Eidiko Systems
+  </div>
+
+</div>
+</body>
+</html>

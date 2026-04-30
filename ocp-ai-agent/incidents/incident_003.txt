@@ -1,0 +1,31 @@
+Date: 2026-02-20
+Title: etcd High Latency
+Severity: CRITICAL
+Component: etcd
+
+Problem:
+etcd cluster showing high commit latency causing API server slowness.
+oc commands taking 10+ seconds to respond.
+
+Root Cause:
+etcd data directory on master nodes was on slow spinning disk
+instead of SSD. High I/O wait causing commit delays.
+
+Resolution Steps:
+1. Check etcd health and latency:
+   oc exec -n openshift-etcd etcd-master1 -- etcdctl endpoint status --cluster -w table
+
+2. Check disk I/O on master nodes:
+   iostat -x 1 5
+
+3. Check etcd metrics:
+   oc exec -n openshift-etcd etcd-master1 -- etcdctl check perf
+
+4. Defragment etcd database:
+   oc exec -n openshift-etcd etcd-master1 -- etcdctl defrag --cluster
+
+5. Monitor latency improvement:
+   oc exec -n openshift-etcd etcd-master1 -- etcdctl endpoint status --cluster -w table
+
+Outcome: Partial resolution via defrag. Full resolution required disk migration.
+Time to resolve: 2 hours

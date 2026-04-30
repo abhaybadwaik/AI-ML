@@ -1,0 +1,41 @@
+Date: 2026-01-15
+Title: Prometheus Persistent Storage Missing
+Severity: WARNING
+Component: monitoring
+
+Problem:
+Prometheus was running without persistent storage configured.
+This caused metrics data loss after cluster upgrades and restarts.
+
+Root Cause:
+The cluster-monitoring-config ConfigMap in openshift-monitoring namespace
+did not have volumeClaimTemplate configured for Prometheus.
+
+Resolution Steps:
+1. Check existing monitoring config:
+   oc get configmap cluster-monitoring-config -n openshift-monitoring -o yaml
+
+2. Create or patch the ConfigMap to add persistent storage:
+   oc apply -f - <<EOF
+   apiVersion: v1
+   kind: ConfigMap
+   metadata:
+     name: cluster-monitoring-config
+     namespace: openshift-monitoring
+   data:
+     config.yaml: |
+       prometheusK8s:
+         volumeClaimTemplate:
+           spec:
+             storageClassName: thin
+             resources:
+               requests:
+                 storage: 50Gi
+   EOF
+
+3. Verify Prometheus pods restart with PVC:
+   oc get pvc -n openshift-monitoring
+   oc get pods -n openshift-monitoring
+
+Outcome: Resolved. Prometheus now retains metrics across restarts.
+Time to resolve: 45 minutes

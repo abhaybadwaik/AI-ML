@@ -1,0 +1,32 @@
+Date: 2026-03-10
+Title: CrashLoopBackOff in openshift-ingress
+Severity: CRITICAL
+Component: pods
+
+Problem:
+router-default pod in openshift-ingress namespace stuck in
+CrashLoopBackOff causing all ingress traffic to fail.
+
+Root Cause:
+Invalid certificate was mounted into the router pod.
+Certificate had expired causing TLS handshake failures.
+
+Resolution Steps:
+1. Check pod status and logs:
+   oc get pods -n openshift-ingress
+   oc logs router-default-xxx -n openshift-ingress
+
+2. Check the ingress certificate:
+   oc get secret router-certs-default -n openshift-ingress -o yaml
+
+3. Delete and regenerate the certificate:
+   oc delete secret router-certs-default -n openshift-ingress
+
+4. Force router pod restart:
+   oc rollout restart deployment/router-default -n openshift-ingress
+
+5. Verify pods are running:
+   oc get pods -n openshift-ingress -w
+
+Outcome: Resolved. Router pod restarted with fresh certificate.
+Time to resolve: 20 minutes
