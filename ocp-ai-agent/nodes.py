@@ -128,7 +128,7 @@ def analyze_node(state: dict) -> dict:
 # ─────────────────────────────────────────────
 def resolve_node(state: dict) -> dict:
     from llm_chains import run_resolution
-    resolutions = run_resolution(state.get("failures", []))
+    resolutions = run_resolution(state.get("failures", []), state)  # ← NEW (pass state)
     return {"resolutions": resolutions}
 
 # ─────────────────────────────────────────────

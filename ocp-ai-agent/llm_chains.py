@@ -1,8 +1,17 @@
+import os
 import json
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from config import settings
 from rag import initialize_rag, find_similar_incidents
+from langfuse import get_client
+from langfuse.langchain import CallbackHandler
+
+# ─────────────────────────────────────────────
+# Initialize Langfuse
+# ─────────────────────────────────────────────
+langfuse = get_client()
+langfuse_handler = CallbackHandler()
 
 # ─────────────────────────────────────────────
 # Initialize RAG once at startup
@@ -22,7 +31,6 @@ llm = ChatGroq(
 
 # ─────────────────────────────────────────────
 # Chain 1: Analysis Chain
-# Raw cluster data → failures list + summary
 # ─────────────────────────────────────────────
 analysis_prompt = ChatPromptTemplate.from_messages([
     ("system", """You are a senior OpenShift SRE expert.
@@ -61,14 +69,17 @@ def run_analysis(state: dict) -> tuple:
     """Run LLM analysis enriched with RAG past incidents."""
     print("\n  [LLM] Analyzing cluster data with Groq...")
 
+    cluster_id = os.getenv("CLUSTER_ID", "ocp-cluster-prod")
+    run_time   = state.get("collected_at", "unknown")
+
     snapshot = json.dumps({
-        "nodes": state.get("nodes", []),
-        "operators": state.get("operators", []),
-        "mcpools": state.get("mcpools", []),
-        "etcd": state.get("etcd", {}),
-        "pvcs": state.get("pvcs", []),
-        "pods": state.get("pods", []),
-        "certs": [
+        "nodes":             state.get("nodes", []),
+        "operators":         state.get("operators", []),
+        "mcpools":           state.get("mcpools", []),
+        "etcd":              state.get("etcd", {}),
+        "pvcs":              state.get("pvcs", []),
+        "pods":              state.get("pods", []),
+        "certs":             [
             c for c in state.get("certs", [])
             if c.get("days_remaining", 999) < 30
         ],
@@ -94,7 +105,21 @@ SIMILAR PAST INCIDENTS (from historical records):
 Use the past incidents as additional context to improve your analysis.
 """
 
-    response = analysis_chain.invoke({"snapshot": enriched_snapshot})
+    response = analysis_chain.invoke(
+        {"snapshot": enriched_snapshot},
+        config={
+            "callbacks": [langfuse_handler],
+            "run_name":  f"analysis-{run_time}",
+            "tags":      ["ocp", "analysis", "production"],
+            "metadata":  {
+                "chain":       "analysis",
+                "cluster_id":  cluster_id,
+                "run_time":    run_time,
+                "nodes_count": str(len(state.get("nodes", []))),
+                "pods_count":  str(len(state.get("pods", [])))
+            }
+        }
+    )
 
     # Clean response
     content = response.content.strip()
@@ -104,9 +129,9 @@ Use the past incidents as additional context to improve your analysis.
             content = content[4:]
     content = content.strip()
 
-    result = json.loads(content)
+    result   = json.loads(content)
     failures = result.get("failures", [])
-    summary = result.get("summary", "Analysis complete.")
+    summary  = result.get("summary", "Analysis complete.")
 
     print(f"  [LLM] Found {len(failures)} failure(s)")
     print(f"  [LLM] Summary: {summary[:100]}...")
@@ -116,7 +141,6 @@ Use the past incidents as additional context to improve your analysis.
 
 # ─────────────────────────────────────────────
 # Chain 2: Resolution Chain
-# Failures → root cause + oc remediation steps
 # ─────────────────────────────────────────────
 resolution_prompt = ChatPromptTemplate.from_messages([
     ("system", """You are a senior OpenShift SRE expert.
@@ -153,13 +177,33 @@ resolution_chain = resolution_prompt | llm
 # ─────────────────────────────────────────────
 # Resolution Function
 # ─────────────────────────────────────────────
-def run_resolution(failures: list) -> list:
-    """Run LLM resolution chain on failures. Returns list of remediation plans."""
+def run_resolution(failures: list, state: dict = {}) -> list:
+    """Run LLM resolution chain on failures."""
     print("\n  [LLM] Generating remediation steps with Groq...")
 
-    response = resolution_chain.invoke({
-        "failures": json.dumps(failures, indent=2)
-    })
+    cluster_id = os.getenv("CLUSTER_ID", "ocp-cluster-prod")
+    run_time   = state.get("collected_at", "unknown")
+
+    severities = list(set(
+        f.get("severity", "UNKNOWN")
+        for f in failures
+    ))
+
+    response = resolution_chain.invoke(
+        {"failures": json.dumps(failures, indent=2)},
+        config={
+            "callbacks": [langfuse_handler],
+            "run_name":  f"resolution-{run_time}",
+            "tags":      ["ocp", "resolution"] + severities,
+            "metadata":  {
+                "chain":          "resolution",
+                "cluster_id":     cluster_id,
+                "run_time":       run_time,
+                "failures_count": str(len(failures)),
+                "severities":     str(severities)
+            }
+        }
+    )
 
     # Clean response
     content = response.content.strip()
@@ -170,5 +214,11 @@ def run_resolution(failures: list) -> list:
     content = content.strip()
 
     resolutions = json.loads(content)
+
     print(f"  [LLM] Generated {len(resolutions)} remediation plan(s)")
     return resolutions
+
+
+# ── Auto flush when app exits ──────────────────
+import atexit
+atexit.register(langfuse.flush)

@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     ocp_ssh_password: str
     ocp_kubeconfig: str
 
+    # Langfuse                               
+    langfuse_secret_key: str                    
+    langfuse_public_key: str                    
+    langfuse_base_url: str = "http://localhost:3000"  
+    cluster_id: str = "ocp-cluster-prod"  
+
     # Scheduler
     interval_minutes: int = 15
     timezone: str = "Asia/Kolkata"
