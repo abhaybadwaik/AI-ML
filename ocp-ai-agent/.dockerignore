@@ -1,0 +1,10 @@
+.env
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.git
+.gitignore
+*.log
+test_*.py
+test_report.html
