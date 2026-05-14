@@ -32,6 +32,7 @@ def chat(question, user_id, session_id, tags):
         return answer
 
 # Different users, sessions, tags
+
 chat("What is AI?",          user_id="abhay-123",  session_id="session-001", tags=["production"])
 chat("What is ML?",          user_id="abhay-123",  session_id="session-001", tags=["production"])
 chat("What is LangChain?",   user_id="rahul-456",  session_id="session-002", tags=["development"])
