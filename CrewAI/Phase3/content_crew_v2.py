@@ -1,3 +1,4 @@
+# run by this command: python Phase3/content_crew_v2.py
 import os
 os.environ["OTEL_SDK_DISABLED"] = "true"
 os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"
