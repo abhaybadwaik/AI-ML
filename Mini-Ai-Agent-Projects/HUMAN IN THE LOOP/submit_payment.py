@@ -3,7 +3,7 @@ from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.postgres import PostgresSaver
 from typing import TypedDict, Literal
 
-DB_URI = "postgresql://postgres:secret@localhost:5432/langgraph"
+DB_URI = "postgresql://postgres:@127.0.0.1:5432/langgraph"
 
 class PaymentState(TypedDict):
     transaction_id: str
