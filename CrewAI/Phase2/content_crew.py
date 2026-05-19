@@ -84,3 +84,7 @@ crew = Crew(
 result = crew.kickoff()
 print("\n========= FINAL ARTICLE =========")
 print(result)
+
+#"I built a 3-agent autonomous content pipeline where a Researcher, Writer and Editor AI agents collaborate sequentially — each agent reads the previous agent's output and builds on it — to produce a publication-ready article with zero human intervention."
+
+# IndustryUse CaseMediaResearcher finds news → Writer writes article → Editor polishes itMarketingResearcher finds competitor data → Strategist makes plan → Copywriter writes campaignSoftwareAnalyst writes requirements → Developer writes code → Reviewer checks codeReal EstateAgent researches property market → Agent writes listing description → Agent creates email to buyerEducationAgent researches topic → Agent creates lesson plan → Agent creates quiz

@@ -33,3 +33,7 @@ crew = Crew(
 result = crew.kickoff()
 print("\n========= RESULT =========")
 print(result)
+
+
+
+# IndustryUse CaseHRAgent reads a job description and writes a interview questionnaire automaticallyLegalAgent reads a contract and summarizes key clauses in simple languageFinanceAgent reads quarterly numbers and generates a summary reportHealthcareAgent reads patient symptoms and suggests possible conditions to a doctorE-commerceAgent reads a product name and writes a product description
