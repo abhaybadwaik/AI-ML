@@ -1,4 +1,8 @@
 """
+That's Lesson 1 — Document Loaders.
+Three loaders we will cover:
+LoaderLoads fromPyPDFLoaderPDF filesWebBaseLoaderWebsites / URLsCSVLoaderCSV files
+
 Phase 2 · Lesson 1 — Document Loaders
 Loading data from PDF, URL, and CSV into LangChain
 
@@ -27,8 +31,8 @@ print("=== PyPDFLoader ===")
 print("Loading research paper PDF...")
 print()
 
-pdf_loader = PyPDFLoader("Phase2/ResearchPaper.pdf")  # path to your PDF
-pdf_docs = pdf_loader.load()
+loader = PyPDFLoader(r"C:\Users\abhay\OneDrive\Desktop\AI-ML\Langchain\Phase2\NEW_SYNOPSIS (Autosaved).pdf")
+pdf_docs = loader.load()
 
 print(f"Total pages loaded : {len(pdf_docs)}")
 print(f"Type of each doc   : {type(pdf_docs[0]).__name__}")

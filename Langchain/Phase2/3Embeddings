@@ -1,0 +1,132 @@
+"""
+Phase 2 · Lesson 3 — Embeddings
+Converting text chunks into numbers so computer can search by meaning
+
+WHAT WE ARE TRYING TO ACHIEVE:
+We have 67 chunks of text from our MBA project.
+When user asks a question, we need to find the most relevant chunks.
+Embeddings convert text into numbers (vectors).
+Similar meaning = similar numbers = easy to find relevant chunks.
+
+Think of it like GPS coordinates for text.
+Similar topics = nearby coordinates.
+"""
+
+from dotenv import load_dotenv
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import HuggingFaceEmbeddings
+
+load_dotenv()
+
+
+# ── Step 1: Load and split the document ──────────────────────
+loader = PyPDFLoader(r"C:\Users\abhay\OneDrive\Desktop\AI-ML\Langchain\Phase2\NEW_SYNOPSIS (Autosaved).pdf")
+docs = loader.load()
+
+splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+chunks = splitter.split_documents(docs)
+
+print(f"Total chunks ready for embedding: {len(chunks)}")
+print()
+
+
+# ── Step 2: Create the embedding model ───────────────────────
+# HuggingFaceEmbeddings — free, runs locally, no API key needed
+# model: all-MiniLM-L6-v2 — small, fast, good quality
+# downloads once, cached locally after that
+
+print("Loading embedding model...")
+embeddings = HuggingFaceEmbeddings(
+    model_name="all-MiniLM-L6-v2",   # free model, downloads automatically
+)
+print("Embedding model loaded!")
+print()
+
+
+# ── Step 3: Embed a single text ───────────────────────────────
+# embed_query() → converts one string to a vector of numbers
+# this is what happens to user's question at search time
+
+sample_text = "What is UPI and how does it work?"
+vector = embeddings.embed_query(sample_text)
+
+print("=== Single Text Embedding ===")
+print(f"Text            : {sample_text}")
+print(f"Vector length   : {len(vector)} numbers")   # 384 numbers for this model
+print(f"First 5 numbers : {vector[:5]}")             # preview of the vector
+print()
+
+
+# ── Step 4: Embed multiple chunks ────────────────────────────
+# embed_documents() → converts list of strings to list of vectors
+# this is what happens to all your chunks when building the database
+
+print("=== Embedding Multiple Chunks ===")
+sample_chunks = [chunks[0].page_content, chunks[1].page_content, chunks[2].page_content]
+vectors = embeddings.embed_documents(sample_chunks)
+
+print(f"Number of chunks embedded : {len(vectors)}")
+print(f"Each vector has           : {len(vectors[0])} numbers")
+print()
+
+
+# ── Step 5: Similarity — the real magic ──────────────────────
+# Similar meaning = similar vectors = small distance between them
+# We measure this using dot product or cosine similarity
+
+import numpy as np
+
+def cosine_similarity(v1, v2):
+    """Measure how similar two vectors are. 1.0 = identical, 0.0 = completely different"""
+    v1, v2 = np.array(v1), np.array(v2)
+    return float(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)))
+
+# embed three sentences — two similar, one different
+upi_text     = "UPI is a digital payment system in India"
+payment_text = "Digital transactions and mobile payments in India"
+cricket_text = "Cricket match results and sports news today"
+
+upi_vec     = embeddings.embed_query(upi_text)
+payment_vec = embeddings.embed_query(payment_text)
+cricket_vec = embeddings.embed_query(cricket_text)
+
+print("=== Similarity Scores ===")
+print(f"UPI vs Payment (similar topics)     : {cosine_similarity(upi_vec, payment_vec):.4f}")
+print(f"UPI vs Cricket (different topics)   : {cosine_similarity(upi_vec, cricket_vec):.4f}")
+print()
+print("Higher score = more similar meaning")
+print("This is exactly how RAG finds relevant chunks!")
+print()
+
+
+# ── Step 6: Embed a real question vs chunks ───────────────────
+# Show exactly how search will work in RAG
+
+print("=== Real RAG Search Preview ===")
+question = "What is the research methodology used in this study?"
+question_vec = embeddings.embed_query(question)
+
+# compare question against first 5 chunks
+print(f"Question: {question}")
+print()
+for i, chunk in enumerate(chunks[:5]):
+    chunk_vec = embeddings.embed_query(chunk.page_content)
+    score = cosine_similarity(question_vec, chunk_vec)
+    print(f"Chunk {i+1} score: {score:.4f} | {chunk.page_content[:60]}...")
+
+print()
+print("""
+=== Summary ===
+Embeddings convert text into vectors (list of numbers)
+Similar meaning = similar vectors = high similarity score
+This is how RAG finds relevant chunks for a question
+
+embed_query()     → embed one string (user question)
+embed_documents() → embed multiple strings (all chunks)
+
+Free embedding model: all-MiniLM-L6-v2
+  - runs locally, no API key needed
+  - 384 numbers per text
+  - good quality for most RAG projects
+""")
