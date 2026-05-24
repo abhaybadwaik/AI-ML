@@ -20,7 +20,7 @@ from langchain_community.vectorstores import FAISS, Chroma
 
 load_dotenv()
 
-PDF_PATH = r"C:\Users\abhay\OneDrive\Desktop\AI-ML\Langchain\Phase2\NEW_SYNOPSIS (Autosaved).pdf"
+PDF_PATH = "Phase2/NEW_SYNOPSIS (Autosaved).pdf"
 
 # ── Step 1: Load, split, embed ────────────────────────────────
 print("Loading and splitting document...")
