@@ -1,3 +1,4 @@
+# uv run python Phase1/LLM_Wrapper.py
 """
 Phase 1 · Lesson 1 — LLM Wrappers
 Real-world scenario: Customer Support Chatbot for TechStore
