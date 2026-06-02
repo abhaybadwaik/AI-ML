@@ -1,0 +1,23 @@
+# Environment
+.env
+
+# Virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Outputs
+outputs/reports/
+outputs/logs/
+
+# UV
+.python-version
+pyproject.toml
+uv.lock
+
+# OS
+.DS_Store
+Thumbs.db

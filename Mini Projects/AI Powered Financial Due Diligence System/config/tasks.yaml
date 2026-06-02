@@ -1,0 +1,101 @@
+financial_analysis_task:
+  description: >
+    Conduct a comprehensive financial analysis of {company_name}.
+    Research and analyze the following:
+    1. Revenue trends and growth rate over last 3-5 years
+    2. Profitability metrics (gross margin, net margin, EBITDA)
+    3. Debt levels and debt-to-equity ratio
+    4. Cash flow position and liquidity
+    5. Key financial ratios compared to industry benchmarks
+    6. Any financial red flags or concerns
+    Use web search to find the latest financial data and reports.
+  expected_output: >
+    A detailed financial analysis report covering revenue, profitability,
+    debt, cash flow, key ratios, and financial red flags for {company_name}.
+    Present findings in a structured format with clear headings.
+
+news_sentiment_task:
+  description: >
+    Research and analyze all recent news and market sentiment for {company_name}.
+    Cover the following:
+    1. Latest news articles from last 6 months
+    2. Management changes or leadership issues
+    3. Product launches, partnerships, or major announcements
+    4. Any controversies, scandals, or negative press
+    5. Analyst ratings and market sentiment
+    6. Social media and public perception
+    Use web search to find the most recent and relevant news.
+  expected_output: >
+    A comprehensive news and sentiment analysis covering recent developments,
+    management updates, major announcements, controversies, and overall
+    market sentiment for {company_name}. Include sentiment score (Positive/Neutral/Negative).
+
+legal_compliance_task:
+  description: >
+    Investigate the legal and regulatory compliance status of {company_name}.
+    Research the following:
+    1. Any ongoing or past litigation and lawsuits
+    2. Regulatory violations or fines
+    3. Compliance with industry-specific regulations
+    4. Corporate governance structure
+    5. Any fraud allegations or investigations
+    6. Intellectual property issues or disputes
+    Use web search to find legal filings, regulatory actions, and compliance records.
+  expected_output: >
+    A detailed legal and compliance report covering litigation history,
+    regulatory violations, governance structure, fraud allegations, and
+    IP issues for {company_name}. Include overall legal risk rating (Low/Medium/High).
+
+competitor_analysis_task:
+  description: >
+    Analyze the competitive landscape and market position of {company_name}.
+    Research the following:
+    1. Top 3-5 direct competitors and their market share
+    2. {company_name} market position and competitive advantages
+    3. Industry growth trends and market size
+    4. Threats from new entrants or disruptive technologies
+    5. SWOT analysis (Strengths, Weaknesses, Opportunities, Threats)
+    6. Pricing strategy compared to competitors
+    Use web search to find market data, industry reports, and competitor information.
+  expected_output: >
+    A comprehensive competitive analysis including top competitors, market
+    position, industry trends, SWOT analysis, and competitive threats
+    for {company_name}.
+
+risk_scoring_task:
+  description: >
+    Based on all the analysis provided by the Financial Analyst, News Analyst,
+    Legal Analyst, and Competitor Analyst — generate a comprehensive risk
+    assessment and scoring for {company_name}.
+    Calculate and provide:
+    1. Financial Risk Score (1-10)
+    2. Legal & Compliance Risk Score (1-10)
+    3. Market & Competitive Risk Score (1-10)
+    4. Reputational Risk Score (1-10)
+    5. Overall Due Diligence Risk Score (1-10)
+    6. Investment Recommendation (Proceed / Proceed with Caution / Do Not Proceed)
+    7. Key risk factors that must be addressed before any investment decision
+  expected_output: >
+    A structured risk scorecard with individual scores for each risk category,
+    an overall risk score, investment recommendation, and list of key risk
+    factors for {company_name}.
+
+report_generation_task:
+  description: >
+    Compile all the analysis from all agents into a professional executive-level
+    due diligence report for {company_name}.
+    The report must include:
+    1. Executive Summary (key findings in 5-6 bullet points)
+    2. Company Overview
+    3. Financial Analysis Summary
+    4. News & Sentiment Summary
+    5. Legal & Compliance Summary
+    6. Competitive Analysis Summary
+    7. Risk Scorecard
+    8. Investment Recommendation
+    9. Conclusion
+    Make it professional, clear, and suitable for C-suite executives and investors.
+  expected_output: >
+    A complete, professional, executive-level due diligence report for
+    {company_name} covering all analysis areas with clear sections,
+    risk scores, and a final investment recommendation.

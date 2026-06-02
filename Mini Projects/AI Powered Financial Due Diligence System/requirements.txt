@@ -1,0 +1,10 @@
+crewai==1.14.4
+crewai-tools==1.14.4
+python-dotenv==1.2.2
+pydantic==2.11.10
+requests==2.34.0
+groq
+litellm
+reportlab
+openpyxl
+pyyaml
