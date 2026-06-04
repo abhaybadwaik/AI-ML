@@ -11,7 +11,7 @@ load_dotenv()
 def main():
     print("\n" + "="*60)
     print("   AI POWERED FINANCIAL DUE DILIGENCE SYSTEM")
-    print("   Powered by CrewAI + Groq")
+    print("   Powered by CrewAI + Claude")
     print("="*60)
 
     company_name = input("\n🏢 Enter Company Name for Due Diligence: ").strip()
@@ -21,9 +21,9 @@ def main():
         return
 
     llm = LLM(
-        model="groq/llama-3.3-70b-versatile",
-        temperature=0.3,
-        max_tokens=4000
+    model="anthropic/claude-3-5-sonnet-20241022", # Added provider prefix
+    temperature=0.3,
+    max_tokens=4000
     )
 
     flow = DueDiligenceFlow(

@@ -11,9 +11,9 @@ def get_news_sentiment_analyst(llm: LLM) -> Agent:
         role=config["role"],
         goal=config["goal"],
         backstory=config["backstory"],
-        tools=[get_search_tool(), get_scrape_tool()],
+        tools=[],
         llm=llm,
         verbose=False,
-        memory=True,
+        memory=False,
         max_iter=5
     )

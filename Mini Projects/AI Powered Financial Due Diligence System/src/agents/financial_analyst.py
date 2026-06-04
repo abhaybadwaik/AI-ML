@@ -1,8 +1,5 @@
 import yaml
 from crewai import Agent, LLM
-from src.tools.search_tool import get_search_tool
-from src.tools.scrape_tool import get_scrape_tool
-from src.tools.custom_tools import convert_currency
 
 def get_financial_analyst(llm: LLM) -> Agent:
     with open("config/agents.yaml", "r") as f:
@@ -12,9 +9,9 @@ def get_financial_analyst(llm: LLM) -> Agent:
         role=config["role"],
         goal=config["goal"],
         backstory=config["backstory"],
-        tools=[get_search_tool(), get_scrape_tool(), convert_currency],
+        tools=[],
         llm=llm,
         verbose=False,
-        memory=True,
+        memory=False,
         max_iter=5
     )

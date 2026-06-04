@@ -10,9 +10,9 @@ def get_risk_analyst(llm: LLM) -> Agent:
         role=config["role"],
         goal=config["goal"],
         backstory=config["backstory"],
-        tools=[calculate_risk_score],
+        tools=[],
         llm=llm,
         verbose=False,
-        memory=True,
+        memory=False,
         max_iter=5
     )

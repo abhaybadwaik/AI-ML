@@ -1,4 +1,5 @@
 from crewai import Crew, Process, LLM
+import time
 from src.agents import (
     get_financial_analyst,
     get_news_sentiment_analyst,
@@ -66,6 +67,9 @@ def build_due_diligence_crew(company_name: str, llm: LLM) -> Crew:
         ],
         manager_agent=manager,
         process=Process.hierarchical,
-        memory=True,
-        verbose=False
+        manager_llm=llm,
+        memory=False,
+        verbose=False,
+        max_rpm=3,
+        task_callback=lambda _: time.sleep(30)
     )
