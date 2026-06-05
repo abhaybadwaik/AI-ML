@@ -15,5 +15,5 @@ def get_news_sentiment_analyst(llm: LLM) -> Agent:
         llm=llm,
         verbose=False,
         memory=False,
-        max_iter=5
+        max_iter=3
     )

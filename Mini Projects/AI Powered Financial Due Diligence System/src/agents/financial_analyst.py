@@ -13,5 +13,5 @@ def get_financial_analyst(llm: LLM) -> Agent:
         llm=llm,
         verbose=False,
         memory=False,
-        max_iter=5
+        max_iter=3
     )

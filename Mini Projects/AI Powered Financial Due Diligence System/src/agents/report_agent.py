@@ -13,5 +13,5 @@ def get_report_generator(llm: LLM) -> Agent:
         llm=llm,
         verbose=False,
         memory=True,
-        max_iter=5
+        max_iter=3
     )

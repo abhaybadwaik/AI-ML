@@ -31,7 +31,7 @@ class DueDiligenceFlow(Flow[DueDiligenceState]):
         print("="*60)
         print(f"\n🏢 Company        : {self.company_name}")
         print(f"📅 Started At     : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        print(f"🤖 LLM            : Groq llama-3.3-70b-versatile")
+        print(f"🤖 LLM            : Claude Sonnet 4.5")
         print(f"👥 Agents         : 7 Specialized AI Analysts")
         print(f"📋 Tasks          : 6 Due Diligence Tasks")
         print(f"⚙️  Process        : Hierarchical (Manager Coordinated)")

@@ -21,9 +21,9 @@ def main():
         return
 
     llm = LLM(
-    model="anthropic/claude-3-5-sonnet-20241022", # Added provider prefix
+    model="claude-sonnet-4-5",
     temperature=0.3,
-    max_tokens=4000
+    max_tokens=2000
     )
 
     flow = DueDiligenceFlow(
