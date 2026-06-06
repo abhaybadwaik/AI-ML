@@ -13,5 +13,5 @@ def get_manager_agent(llm: LLM) -> Agent:
         llm=llm,
         verbose=False,
         allow_delegation=True,
-        max_iter=3
+        max_iter=2
     )

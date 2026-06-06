@@ -66,7 +66,8 @@ def build_due_diligence_crew(company_name: str, llm: LLM) -> Crew:
             report_task
         ],
         manager_agent=manager,
-        process=Process.hierarchical,
+        # process=Process.hierarchical,
+        process=Process.sequential,
         manager_llm=llm,
         memory=False,
         verbose=False,

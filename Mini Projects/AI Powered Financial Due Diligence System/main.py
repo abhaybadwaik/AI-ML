@@ -23,7 +23,7 @@ def main():
     llm = LLM(
     model="claude-sonnet-4-5",
     temperature=0.3,
-    max_tokens=2000
+    max_tokens=1000
     )
 
     flow = DueDiligenceFlow(
