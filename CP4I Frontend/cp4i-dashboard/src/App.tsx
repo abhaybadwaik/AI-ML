@@ -1,6 +1,12 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import MainLayout from './components/layout/MainLayout'
 import Dashboard from './pages/Dashboard'
+import WorkloadRequest from './pages/WorkloadRequest'
+import AssessmentDetail from './pages/AssessmentDetail'
+import Approvals from './pages/Approvals'
+import LicenseMonitoring from './pages/LicenseMonitoring'
+import Reports from './pages/Reports'
+import UserManagement from './pages/UserManagement'
 
 function Placeholder({ name }: { name: string }) {
   return (
@@ -16,12 +22,13 @@ function App() {
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Dashboard />} />
-          <Route path="monitoring" element={<Placeholder name="License Monitoring" />} />
-          <Route path="request" element={<Placeholder name="Workload Request" />} />
+          <Route path="monitoring" element={<LicenseMonitoring />} />
+          <Route path="request" element={<WorkloadRequest />} />
           <Route path="assessments" element={<Placeholder name="Assessments" />} />
-          <Route path="approvals" element={<Placeholder name="Approvals" />} />
-          <Route path="reports" element={<Placeholder name="Reports" />} />
-          <Route path="users" element={<Placeholder name="User Management" />} />
+          <Route path="assessment/:id" element={<AssessmentDetail />} />
+          <Route path="approvals" element={<Approvals />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="users" element={<UserManagement />} />
         </Route>
       </Routes>
     </BrowserRouter>
