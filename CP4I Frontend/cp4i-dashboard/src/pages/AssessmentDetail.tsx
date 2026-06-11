@@ -1,3 +1,5 @@
+import AIAssessmentSummary from '../components/ui/AIAssessmentSummary'
+
 const assessment = {
   id: 'ASS-00124',
   workloadName: 'Customer Onboarding API',
@@ -132,6 +134,23 @@ export default function AssessmentDetail() {
               ))}
             </div>
           </div>
+
+          {/* AI Summary */}
+          <AIAssessmentSummary
+            assessment={{
+              workloadName: assessment.workloadName,
+              product: assessment.product,
+              cluster: assessment.cluster,
+              estimatedCpu: assessment.estimatedCpu,
+              requiredVpc: assessment.requiredVpc,
+              currentUsage: assessment.currentUsage,
+              projectedUsage: assessment.projectedUsage,
+              availableHeadroom: assessment.availableHeadroom,
+              recommendation: assessment.recommendation,
+              risk: assessment.risk,
+            }}
+          />
+
         </div>
 
         {/* RIGHT COLUMN */}

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import MainLayout from './components/layout/MainLayout'
+import ProtectedRoute from './components/layout/layout/ProtectedRoute'
 import Dashboard from './pages/Dashboard'
 import WorkloadRequest from './pages/WorkloadRequest'
 import AssessmentDetail from './pages/AssessmentDetail'
@@ -15,7 +16,14 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={<MainLayout />}>
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <MainLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="monitoring" element={<LicenseMonitoring />} />
           <Route path="request" element={<WorkloadRequest />} />

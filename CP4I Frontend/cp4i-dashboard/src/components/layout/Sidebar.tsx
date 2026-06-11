@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 
 const navItems = [
   { label: 'Dashboard', path: '/', icon: '▦' },
@@ -11,6 +11,17 @@ const navItems = [
 ]
 
 export default function Sidebar() {
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    localStorage.removeItem('cp4i_token')
+    localStorage.removeItem('cp4i_user')
+    navigate('/login')
+  }
+
+  const user = JSON.parse(localStorage.getItem('cp4i_user') || '{}')
+  const initials = user.name ? user.name.slice(0, 2).toUpperCase() : 'AB'
+
   return (
     <div className="w-56 bg-slate-900 flex flex-col h-screen flex-shrink-0">
       {/* Logo */}
@@ -24,11 +35,11 @@ export default function Sidebar() {
       {/* User */}
       <div className="px-4 py-3 border-b border-slate-700 flex items-center gap-3">
         <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-          AB
+          {initials}
         </div>
         <div>
-          <div className="text-white text-xs font-semibold">Abhay</div>
-          <div className="text-slate-400 text-xs">Admin</div>
+          <div className="text-white text-xs font-semibold">{user.name || 'User'}</div>
+          <div className="text-slate-400 text-xs capitalize">{user.role || 'admin'}</div>
         </div>
       </div>
 
@@ -63,7 +74,10 @@ export default function Sidebar() {
 
       {/* Logout */}
       <div className="px-4 py-4 border-t border-slate-700">
-        <button className="text-slate-400 text-xs hover:text-white transition-colors">
+        <button
+          onClick={handleLogout}
+          className="text-slate-400 text-xs hover:text-white transition-colors"
+        >
           ⎋ Logout
         </button>
       </div>
