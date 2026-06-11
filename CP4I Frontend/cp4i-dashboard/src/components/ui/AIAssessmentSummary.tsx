@@ -23,6 +23,7 @@ export default function AIAssessmentSummary({ assessment }: Props) {
   const generateSummary = async () => {
     setLoading(true)
     setSummary('')
+    setGenerated(false)
 
     const prompt = `You are a CP4I License Assessment Analyst for Standard Bank Mozambique. 
     
@@ -48,9 +49,12 @@ Write only the summary paragraph. No headers, no bullet points, no extra formatt
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY || '',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-5',
           max_tokens: 1000,
           messages: [
             { role: 'user', content: prompt }
@@ -59,10 +63,19 @@ Write only the summary paragraph. No headers, no bullet points, no extra formatt
       })
 
       const data = await response.json()
-      const text = data.content?.[0]?.text || 'Unable to generate summary.'
-      setSummary(text)
+      console.log('API Response:', data)
+      console.log('Content:', data.content)
+      console.log('Error:', data.error)
+
+      if (data.error) {
+        setSummary(`Error: ${data.error.message}`)
+      } else {
+        const text = data.content?.[0]?.text || 'Unable to generate summary.'
+        setSummary(text)
+      }
       setGenerated(true)
     } catch (err) {
+      console.log('Fetch error:', err)
       setSummary('Failed to generate AI summary. Please try again.')
       setGenerated(true)
     }

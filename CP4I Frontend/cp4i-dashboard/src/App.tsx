@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import MainLayout from './components/layout/MainLayout'
-import ProtectedRoute from './components/layout/layout/ProtectedRoute'
+import ProtectedRoute from "./components/layout/ProtectedRoute";
 import Dashboard from './pages/Dashboard'
 import WorkloadRequest from './pages/WorkloadRequest'
 import AssessmentDetail from './pages/AssessmentDetail'
