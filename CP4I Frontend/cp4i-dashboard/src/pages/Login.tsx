@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { login } from '../api/jayprakashApi'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -17,32 +18,16 @@ export default function Login() {
     setLoading(true)
     setError('')
 
-    // Mock login — replace with real API later
-    setTimeout(() => {
-      const mockUsers: Record<string, { name: string; role: string }> = {
-        'abhay.admin': { name: 'Abhay', role: 'admin' },
-        'sumith.ops': { name: 'Sumith', role: 'operations' },
-        'pratik.eng': { name: 'Pratik', role: 'requestor' },
-        'prakash.appr': { name: 'Jayprakash', role: 'approver' },
-        'mgr.bank': { name: 'Bank Manager', role: 'management' },
-      }
-
-      const user = mockUsers[username]
-
-      if (user && password === 'password123') {
-        // Store in localStorage
-        localStorage.setItem('cp4i_token', 'mock-jwt-token-12345')
-        localStorage.setItem('cp4i_user', JSON.stringify({
-          username,
-          name: user.name,
-          role: user.role,
-        }))
-        navigate('/')
-      } else {
-        setError('Invalid username or password.')
-      }
+    try {
+      const response = await login({ username, password })
+      localStorage.setItem('cp4i_token', response.access_token)
+      localStorage.setItem('cp4i_user', JSON.stringify(response.user))
+      navigate('/')
+    } catch (err) {
+      setError('Invalid username or password.')
+    } finally {
       setLoading(false)
-    }, 800)
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -107,17 +92,6 @@ export default function Login() {
         >
           {loading ? 'Logging in...' : 'Login'}
         </button>
-
-        {/* Hint */}
-        <div className="mt-6 bg-slate-50 rounded-lg p-3">
-          <div className="text-xs font-bold text-slate-500 mb-2">Demo Credentials:</div>
-          <div className="space-y-1 text-xs text-slate-400">
-            <div><span className="font-semibold text-slate-600">abhay.admin</span> — Admin</div>
-            <div><span className="font-semibold text-slate-600">sumith.ops</span> — Operations</div>
-            <div><span className="font-semibold text-slate-600">prakash.appr</span> — Approver</div>
-            <div className="mt-1">Password for all: <span className="font-semibold text-slate-600">password123</span></div>
-          </div>
-        </div>
 
         <div className="text-center mt-6 text-xs text-slate-300">v1.0.0 — Authorized users only</div>
       </div>
