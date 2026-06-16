@@ -10,12 +10,14 @@ import LicenseMonitoring from './pages/LicenseMonitoring'
 import Reports from './pages/Reports'
 import UserManagement from './pages/UserManagement'
 import Login from './pages/Login'
+import Signup from './pages/Signup'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route
           path="/"
           element={

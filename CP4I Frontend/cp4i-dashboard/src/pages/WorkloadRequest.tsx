@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { workloadAPI, assessmentAPI } from '../services/api'
 
 const products = [
   { value: 'ACE', label: 'ACE — App Connect Enterprise', ratio: '1:3', mult: 3 },
@@ -9,11 +11,12 @@ const products = [
 
 const clusters = [
   { value: 'prod', label: 'Production', currentVpcs: 37 },
-  { value: 'nonprod', label: 'Non-Production', currentVpcs: 13 },
+  { value: 'non-prod', label: 'Non-Production', currentVpcs: 13 },
   { value: 'dr', label: 'DR', currentVpcs: 25 },
 ]
 
 export default function WorkloadRequest() {
+  const navigate = useNavigate()
   const [form, setForm] = useState({
     workloadName: '',
     product: '',
@@ -22,6 +25,8 @@ export default function WorkloadRequest() {
     goLiveDate: '',
     justification: '',
   })
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
   const selectedProduct = products.find(p => p.value === form.product)
   const selectedCluster = clusters.find(c => c.value === form.cluster)
@@ -34,12 +39,39 @@ export default function WorkloadRequest() {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  const handleSubmit = () => {
-    if (!form.workloadName || !form.product || !form.cluster || !form.cpu) {
-      alert('Please fill all required fields.')
+  const handleSubmit = async () => {
+    if (!form.workloadName || !form.product || !form.cluster || !form.cpu || !form.goLiveDate || !form.justification) {
+      setError('Please fill all required fields.')
       return
     }
-    alert(`Request submitted!\n\nPOST /workload-requests → 201 Created\nPOST /assessments → Assessment running...\n\nIn real app this will redirect to Assessment Details.`)
+
+    setSubmitting(true)
+    setError('')
+
+    try {
+      const user = JSON.parse(localStorage.getItem('cp4i_user') || '{}')
+
+      const workloadResponse = await workloadAPI.submit({
+        workload_name: form.workloadName,
+        product_type: form.product,
+        estimated_cpu: parseFloat(form.cpu),
+        business_justification: form.justification,
+        requested_by: user.username,
+        go_live_date: form.goLiveDate,
+        cluster: form.cluster,
+      })
+
+      const requestId = workloadResponse.data.id
+      const assessmentResponse = await assessmentAPI.run(requestId)
+      const assessmentId = assessmentResponse.data.id
+
+      navigate(`/assessments/${assessmentId}`)
+
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Submission failed. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -49,6 +81,13 @@ export default function WorkloadRequest() {
       <div className="bg-white rounded-xl border border-slate-200 p-6">
         <div className="text-sm font-bold text-slate-800 mb-1">New Workload Request</div>
         <div className="text-xs text-slate-400 mb-6">Fill in the details below. VPC estimate updates live as you type.</div>
+
+        {/* Error */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-xs text-red-600 font-semibold mb-4">
+            {error}
+          </div>
+        )}
 
         {/* Workload Name */}
         <div className="mb-4">
@@ -151,9 +190,10 @@ export default function WorkloadRequest() {
         <div className="flex gap-2">
           <button
             onClick={handleSubmit}
-            className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors"
+            disabled={submitting}
+            className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Submit Request
+            {submitting ? 'Submitting...' : 'Submit Request'}
           </button>
           <button className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50 transition-colors">
             Save as Draft

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { login } from '../api/jayprakashApi'
+import { authAPI } from '../services/api'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -19,12 +19,21 @@ export default function Login() {
     setError('')
 
     try {
-      const response = await login({ username, password })
-      localStorage.setItem('cp4i_token', response.access_token)
-      localStorage.setItem('cp4i_user', JSON.stringify(response.user))
+      const response = await authAPI.login(username, password)
+      localStorage.setItem('cp4i_token', response.data.access_token)
+      localStorage.setItem('cp4i_user', JSON.stringify({
+        id: response.data.user_id,
+        username: response.data.username,
+        full_name: response.data.full_name,
+        role: response.data.role,
+      }))
       navigate('/')
-    } catch (err) {
-      setError('Invalid username or password.')
+    } catch (err: any) {
+      if (err.response?.status === 403) {
+        setError('Your account is inactive. Please contact the administrator.')
+      } else {
+        setError('Invalid username or password.')
+      }
     } finally {
       setLoading(false)
     }
@@ -65,7 +74,7 @@ export default function Login() {
             onChange={e => setUsername(e.target.value)}
             onKeyDown={handleKeyDown}
             className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            placeholder="Enter your username"
+            placeholder="Enter your username or email"
           />
         </div>
 
@@ -93,7 +102,18 @@ export default function Login() {
           {loading ? 'Logging in...' : 'Login'}
         </button>
 
-        <div className="text-center mt-6 text-xs text-slate-300">v1.0.0 — Authorized users only</div>
+        {/* Signup Link */}
+        <p className="text-center text-xs text-slate-400 mt-5">
+          Don't have an account?{' '}
+          <button
+            onClick={() => navigate('/signup')}
+            className="text-blue-600 font-semibold hover:underline"
+          >
+            Request Access
+          </button>
+        </p>
+
+        <div className="text-center mt-4 text-xs text-slate-300">v1.0.0 — Authorized users only</div>
       </div>
     </div>
   )

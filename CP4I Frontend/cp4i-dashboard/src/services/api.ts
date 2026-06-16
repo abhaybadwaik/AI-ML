@@ -1,26 +1,20 @@
 import axios from 'axios'
 
-// Base API instance
+// ─── JAY'S INSTANCE (auth + approvals) ──────────────
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.143:8000/',
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.143:8000',
+  headers: { 'Content-Type': 'application/json' },
 })
 
-// Request interceptor — attach token to every request
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('cp4i_token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
+    if (token) config.headers.Authorization = `Bearer ${token}`
     return config
   },
   (error) => Promise.reject(error)
 )
 
-// Response interceptor — handle auth errors globally
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -36,36 +30,91 @@ api.interceptors.response.use(
 export default api
 
 
-// ─── AUTH ───────────────────────────────────────────
+// ─── PRATIK'S INSTANCE (assessments + workload) ─────
+const pratikApi = axios.create({
+  baseURL: import.meta.env.VITE_PRATIK_API_BASE_URL || 'http://192.168.1.107:8000',
+  headers: { 'Content-Type': 'application/json' },
+})
+
+pratikApi.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('cp4i_token')
+    if (token) config.headers.Authorization = `Bearer ${token}`
+    return config
+  },
+  (error) => Promise.reject(error)
+)
+
+pratikApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('cp4i_token')
+      localStorage.removeItem('cp4i_user')
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
+
+
+// ─── AUTH (Jay) ──────────────────────────────────────
 export const authAPI = {
-  login: (username: string, password: string) =>
-    api.post('/auth/login', { username, password }),
+  login: (username: string, password: string) => {
+    const form = new URLSearchParams()
+    form.append('username', username)
+    form.append('password', password)
+    return api.post('/auth/login', form, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    })
+  },
+  signup: (username: string, email: string, full_name: string, password: string) =>
+    api.post('/auth/signup', { username, email, full_name, password }),
+  logout: () => api.post('/auth/logout'),
+  getMe: () => api.get('/auth/me'),
 }
 
 
-// ─── LICENSE SNAPSHOTS (Sumith) ─────────────────────
-export const licenseAPI = {
-  getSnapshots: (cluster?: string) =>
-    api.get('/license-snapshots', { params: { cluster } }),
+// ─── ADMIN (Jay) ─────────────────────────────────────
+export const adminAPI = {
+  getSignupRequests: (status: string = 'pending') =>
+    api.get(`/auth/signup-requests?status=${status}`),
+  approveSignupRequest: (id: number, role: string) =>
+    api.post(`/auth/signup-requests/${id}/approve`, { role }),
+  rejectSignupRequest: (id: number, reason?: string) =>
+    api.post(`/auth/signup-requests/${id}/reject`, { reason }),
+  getUsers: () => api.get('/auth/users'),
+  deleteUser: (id: number) => api.delete(`/auth/users/${id}`),
+}
 
-  triggerIngestion: (cluster: string, sourceType: string) =>
-    api.post('/ingestion-runs', { cluster, source_type: sourceType }),
 
-  getIngestionStatus: (id: string) =>
-    api.get(`/ingestion-runs/${id}`),
+// ─── APPROVALS (Jay) ─────────────────────────────────
+export const approvalAPI = {
+  getAll: () => api.get('/approvals/'),
+  getById: (id: number) => api.get(`/approvals/${id}`),
+  getStatus: (id: number) => api.get(`/approvals/status/${id}`),
+  create: (assessmentId: number, requestedBy: string) =>
+    api.post(`/approvals/create/${assessmentId}`, { requested_by: requestedBy }),
+  approve: (id: number) =>
+    api.patch(`/approvals/${id}`, { status: 'approved' }),
+  reject: (id: number, comments: string) =>
+    api.patch(`/approvals/${id}`, { status: 'rejected', comments }),
 }
 
 
 // ─── WORKLOAD REQUESTS (Pratik) ──────────────────────
 export const workloadAPI = {
+  getAll: () => pratikApi.get('/workload-requests'),
+  getById: (id: string) => pratikApi.get(`/workload-requests/${id}`),
   submit: (data: {
     workload_name: string
     product_type: string
     estimated_cpu: number
     business_justification: string
+    requested_by: string
     go_live_date: string
     cluster: string
-  }) => api.post('/workload-requests', data),
+  }) => pratikApi.post('/workload-requests', data),
 }
 
 
@@ -78,36 +127,23 @@ export const assessmentAPI = {
     to_date?: string
     page?: number
     page_size?: number
-  }) => api.get('/assessments', { params }),
-
-  getById: (id: string) =>
-    api.get(`/assessments/${id}`),
-
-  run: (requestId: string) =>
-    api.post('/assessments', { request_id: requestId }),
+  }) => pratikApi.get('/assessments', { params }),
+  getById: (id: string) => pratikApi.get(`/assessments/${id}`),
+  run: (requestId: string) => pratikApi.post('/assessments', { request_id: requestId }),
 }
 
 
-// ─── APPROVALS (Prakash) ─────────────────────────────
-export const approvalAPI = {
-  getAll: (params?: { status?: string; cluster?: string }) =>
-    api.get('/approvals', { params }),
-
-  getById: (id: string) =>
-    api.get(`/approvals/${id}`),
-
-  submit: (assessmentId: string) =>
-    api.post('/approvals', { assessment_id: assessmentId }),
-
-  decide: (id: string, action: 'approve' | 'reject', comments: string) =>
-    api.patch(`/approvals/${id}`, { action, comments }),
+// ─── LICENSE (Pratik) ────────────────────────────────
+export const licenseAPI = {
+  getSnapshots: () => pratikApi.get('/license-snapshots'),
+  getCapacity: () => pratikApi.get('/license-capacity'),
+  getProductRatios: () => pratikApi.get('/product-ratios'),
 }
 
 
 // ─── DASHBOARD (Abhay) ───────────────────────────────
 export const dashboardAPI = {
-  getSummary: () =>
-    api.get('/dashboard'),
+  getSummary: () => api.get('/dashboard'),
 }
 
 
@@ -123,11 +159,8 @@ export const reportsAPI = {
 }
 
 
-// ─── USERS (Prakash) ─────────────────────────────────
+// ─── USERS (Jay) ─────────────────────────────────────
 export const usersAPI = {
-  getAll: () => api.get('/users'),
-  create: (data: { full_name: string; username: string; email: string; role: string }) =>
-    api.post('/users', data),
-  update: (id: number, data: Partial<{ full_name: string; role: string; status: string }>) =>
-    api.patch(`/users/${id}`, data),
+  getAll: () => api.get('/auth/users'),
+  delete: (id: number) => api.delete(`/auth/users/${id}`),
 }

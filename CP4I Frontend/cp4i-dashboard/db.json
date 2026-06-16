@@ -1,0 +1,415 @@
+{
+  "license-snapshots": [
+    {
+      "id": 1,
+      "cluster": "prod",
+      "total_vpcs": 37,
+      "limit_vpcs": 50,
+      "last_updated": "01-Jun-2026 10:03",
+      "source": "API",
+      "products": [
+        {
+          "product_name": "ACE",
+          "measured_quantity": 4,
+          "converted_quantity": 12,
+          "ratio": "1:3"
+        },
+        {
+          "product_name": "APIC",
+          "measured_quantity": 18,
+          "converted_quantity": 18,
+          "ratio": "1:1"
+        },
+        {
+          "product_name": "MQ Advanced",
+          "measured_quantity": 2,
+          "converted_quantity": 1,
+          "ratio": "2:1"
+        },
+        {
+          "product_name": "DataPower",
+          "measured_quantity": 6,
+          "converted_quantity": 6,
+          "ratio": "1:1"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "cluster": "nonprod",
+      "total_vpcs": 13,
+      "limit_vpcs": 50,
+      "last_updated": "01-Jun-2026 10:05",
+      "source": "API",
+      "products": [
+        {
+          "product_name": "ACE",
+          "measured_quantity": 12,
+          "converted_quantity": 6,
+          "ratio": "2:3"
+        },
+        {
+          "product_name": "APIC",
+          "measured_quantity": 6,
+          "converted_quantity": 3,
+          "ratio": "2:1"
+        },
+        {
+          "product_name": "MQ Advanced",
+          "measured_quantity": 8,
+          "converted_quantity": 2,
+          "ratio": "4:1"
+        },
+        {
+          "product_name": "DataPower",
+          "measured_quantity": 2,
+          "converted_quantity": 1,
+          "ratio": "2:1"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "cluster": "dr",
+      "total_vpcs": 25,
+      "limit_vpcs": 50,
+      "last_updated": "01-Jun-2026 10:08",
+      "source": "PDF",
+      "products": [
+        {
+          "product_name": "APIC",
+          "measured_quantity": 18,
+          "converted_quantity": 18,
+          "ratio": "1:1"
+        },
+        {
+          "product_name": "MQ Advanced",
+          "measured_quantity": 2,
+          "converted_quantity": 2,
+          "ratio": "2:1"
+        },
+        {
+          "product_name": "DataPower",
+          "measured_quantity": 6,
+          "converted_quantity": 6,
+          "ratio": "1:1"
+        }
+      ]
+    }
+  ],
+  "assessments": [
+    {
+      "id": "ASS-00124",
+      "workload_name": "Customer Onboarding API",
+      "product_type": "ACE",
+      "cluster": "prod",
+      "estimated_cpu": 2,
+      "go_live_date": "01-Jul-2026",
+      "submitted_by": "abhay.admin",
+      "submitted_on": "09-Jun-2026 14:32",
+      "status": "pending_approval",
+      "ratio": "1:3",
+      "required_vpc": 3,
+      "current_usage": 37,
+      "projected_usage": 40,
+      "available_headroom": 60,
+      "recommendation": "Proceed",
+      "risk_level": "Low",
+      "assessed_at": "09-Jun-2026"
+    },
+    {
+      "id": "ASS-00123",
+      "workload_name": "Payment Gateway",
+      "product_type": "APIC",
+      "cluster": "prod",
+      "estimated_cpu": 12,
+      "go_live_date": "05-Jul-2026",
+      "submitted_by": "sumith.ops",
+      "submitted_on": "05-Jun-2026 10:00",
+      "status": "approved",
+      "ratio": "1:1",
+      "required_vpc": 12,
+      "current_usage": 37,
+      "projected_usage": 49,
+      "available_headroom": 1,
+      "recommendation": "Hold",
+      "risk_level": "Medium",
+      "assessed_at": "05-Jun-2026"
+    },
+    {
+      "id": "ASS-00122",
+      "workload_name": "Fraud Detection MQ",
+      "product_type": "MQ",
+      "cluster": "nonprod",
+      "estimated_cpu": 4,
+      "go_live_date": "03-Jul-2026",
+      "submitted_by": "pratik.eng",
+      "submitted_on": "03-Jun-2026 09:00",
+      "status": "approved",
+      "ratio": "4:1",
+      "required_vpc": 2,
+      "current_usage": 13,
+      "projected_usage": 15,
+      "available_headroom": 35,
+      "recommendation": "Proceed",
+      "risk_level": "Low",
+      "assessed_at": "03-Jun-2026"
+    },
+    {
+      "id": "ASS-00121",
+      "workload_name": "DataSync Batch Job",
+      "product_type": "ACE",
+      "cluster": "prod",
+      "estimated_cpu": 6,
+      "go_live_date": "01-Jun-2026",
+      "submitted_by": "abhay.admin",
+      "submitted_on": "01-Jun-2026 08:00",
+      "status": "rejected",
+      "ratio": "1:3",
+      "required_vpc": 9,
+      "current_usage": 37,
+      "projected_usage": 46,
+      "available_headroom": 4,
+      "recommendation": "Reject",
+      "risk_level": "Critical",
+      "assessed_at": "01-Jun-2026"
+    },
+    {
+      "id": "ASS-00120",
+      "workload_name": "API Gateway v2",
+      "product_type": "DataPower",
+      "cluster": "dr",
+      "estimated_cpu": 3,
+      "go_live_date": "08-Jul-2026",
+      "submitted_by": "sumith.ops",
+      "submitted_on": "08-Jun-2026 11:00",
+      "status": "pending_approval",
+      "ratio": "1:1",
+      "required_vpc": 3,
+      "current_usage": 25,
+      "projected_usage": 28,
+      "available_headroom": 22,
+      "recommendation": "Proceed",
+      "risk_level": "Low",
+      "assessed_at": "08-Jun-2026"
+    },
+    {
+      "id": "ASS-00119",
+      "workload_name": "KYC Verification Service",
+      "product_type": "APIC",
+      "cluster": "prod",
+      "estimated_cpu": 15,
+      "go_live_date": "07-Jul-2026",
+      "submitted_by": "pratik.eng",
+      "submitted_on": "07-Jun-2026 14:00",
+      "status": "pending_approval",
+      "ratio": "1:1",
+      "required_vpc": 15,
+      "current_usage": 37,
+      "projected_usage": 52,
+      "available_headroom": -2,
+      "recommendation": "Hold",
+      "risk_level": "High",
+      "assessed_at": "07-Jun-2026"
+    }
+  ],
+  "workload-requests": [
+    {
+      "id": "REQ-001",
+      "workload_name": "Customer Onboarding API",
+      "product_type": "ACE",
+      "estimated_cpu": 2,
+      "business_justification": "New customer onboarding flow",
+      "go_live_date": "01-Jul-2026",
+      "cluster": "prod",
+      "status": "draft",
+      "created_at": "09-Jun-2026"
+    }
+  ],
+  "approvals": [
+    {
+      "id": "APP-001",
+      "assessment_id": "ASS-00124",
+      "workload_name": "Customer Onboarding API",
+      "submitted_by": "abhay.admin",
+      "product": "ACE",
+      "cluster": "prod",
+      "required_vpc": 3,
+      "projected_usage": 40,
+      "risk_level": "Low",
+      "recommendation": "Proceed",
+      "status": "approved",
+      "submitted_date": "09-Jun-2026",
+      "comments": "",
+      "decided_by": "abhay.admin",
+      "decision_date": "16/06/2026"
+    },
+    {
+      "id": "APP-002",
+      "assessment_id": "ASS-00120",
+      "workload_name": "API Gateway v2",
+      "submitted_by": "sumith.ops",
+      "product": "DataPower",
+      "cluster": "dr",
+      "required_vpc": 3,
+      "projected_usage": 28,
+      "risk_level": "Low",
+      "recommendation": "Proceed",
+      "status": "rejected",
+      "submitted_date": "08-Jun-2026",
+      "comments": "",
+      "decided_by": "abhay.admin",
+      "decision_date": "16/06/2026"
+    },
+    {
+      "id": "APP-003",
+      "assessment_id": "ASS-00119",
+      "workload_name": "KYC Verification Service",
+      "submitted_by": "pratik.eng",
+      "product": "APIC",
+      "cluster": "prod",
+      "required_vpc": 15,
+      "projected_usage": 52,
+      "risk_level": "High",
+      "recommendation": "Hold",
+      "status": "rejected",
+      "submitted_date": "07-Jun-2026",
+      "comments": "",
+      "decided_by": "abhay.admin",
+      "decision_date": "16/06/2026"
+    },
+    {
+      "id": "APP-H01",
+      "assessment_id": "ASS-00123",
+      "workload_name": "Payment Gateway",
+      "submitted_by": "sumith.ops",
+      "product": "APIC",
+      "cluster": "prod",
+      "required_vpc": 12,
+      "projected_usage": 49,
+      "risk_level": "Medium",
+      "recommendation": "Hold",
+      "status": "approved",
+      "submitted_date": "05-Jun-2026",
+      "decided_by": "admin.bank",
+      "comments": "Capacity sufficient, proceed.",
+      "decision_date": "05-Jun-2026"
+    },
+    {
+      "id": "APP-H02",
+      "assessment_id": "ASS-00122",
+      "workload_name": "Fraud Detection MQ",
+      "submitted_by": "pratik.eng",
+      "product": "MQ",
+      "cluster": "nonprod",
+      "required_vpc": 2,
+      "projected_usage": 15,
+      "risk_level": "Low",
+      "recommendation": "Proceed",
+      "status": "approved",
+      "submitted_date": "03-Jun-2026",
+      "decided_by": "admin.bank",
+      "comments": "Low risk, approved.",
+      "decision_date": "03-Jun-2026"
+    },
+    {
+      "id": "APP-H03",
+      "assessment_id": "ASS-00121",
+      "workload_name": "DataSync Batch Job",
+      "submitted_by": "abhay.admin",
+      "product": "ACE",
+      "cluster": "prod",
+      "required_vpc": 9,
+      "projected_usage": 46,
+      "risk_level": "Critical",
+      "recommendation": "Reject",
+      "status": "rejected",
+      "submitted_date": "01-Jun-2026",
+      "decided_by": "admin.bank",
+      "comments": "Exceeds licensed capacity.",
+      "decision_date": "01-Jun-2026"
+    }
+  ],
+  "users": [
+    {
+      "id": 1,
+      "fullName": "Abhay Badwaik",
+      "username": "abhay.admin",
+      "email": "abhay@eidiko.com",
+      "role": "Admin",
+      "status": "Active",
+      "lastLogin": "10-Jun-2026 09:15"
+    },
+    {
+      "id": 2,
+      "fullName": "Sumith Kumar",
+      "username": "sumith.ops",
+      "email": "sumith@eidiko.com",
+      "role": "Operations",
+      "status": "Active",
+      "lastLogin": "10-Jun-2026 08:50"
+    },
+    {
+      "id": 3,
+      "fullName": "Pratik Sharma",
+      "username": "pratik.eng",
+      "email": "pratik@eidiko.com",
+      "role": "Requestor",
+      "status": "Active",
+      "lastLogin": "09-Jun-2026 17:30"
+    },
+    {
+      "id": 4,
+      "fullName": "Jayprakash",
+      "username": "prakash.appr",
+      "email": "prakash@eidiko.com",
+      "role": "Approver",
+      "status": "Active",
+      "lastLogin": "10-Jun-2026 10:02"
+    },
+    {
+      "id": 5,
+      "fullName": "Bank Manager",
+      "username": "mgr.bank",
+      "email": "manager@standardbank.co.mz",
+      "role": "Management",
+      "status": "Active",
+      "lastLogin": "08-Jun-2026 14:20"
+    }
+  ],
+  "dashboard": [
+    {
+      "id": 1,
+      "clusters": [
+        {
+          "name": "prod",
+          "total_vpcs": 37,
+          "last_updated": "01-Jun-2026 10:03"
+        },
+        {
+          "name": "nonprod",
+          "total_vpcs": 13,
+          "last_updated": "01-Jun-2026 10:05"
+        },
+        {
+          "name": "dr",
+          "total_vpcs": 25,
+          "last_updated": "01-Jun-2026 10:08"
+        }
+      ],
+      "pending_approvals": 3,
+      "total_vpcs_all_clusters": 75
+    }
+  ],
+  "ingestion-runs": [
+    {
+      "id": "ING-001",
+      "cluster": "prod",
+      "source_type": "api",
+      "status": "success",
+      "records_collected": 4,
+      "started_at": "01-Jun-2026 10:00",
+      "completed_at": "01-Jun-2026 10:03"
+    }
+  ]
+}
