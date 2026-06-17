@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { workloadAPI, assessmentAPI } from '../services/api'
+import { workloadAPI } from '../services/api'
 
 const products = [
   { value: 'ACE', label: 'ACE — App Connect Enterprise', ratio: '1:3', mult: 3 },
@@ -51,7 +51,8 @@ export default function WorkloadRequest() {
     try {
       const user = JSON.parse(localStorage.getItem('cp4i_user') || '{}')
 
-      const workloadResponse = await workloadAPI.submit({
+      // POST /workload-requests now handles assessment + approval automatically
+      const response = await workloadAPI.submit({
         workload_name: form.workloadName,
         product_type: form.product,
         estimated_cpu: parseFloat(form.cpu),
@@ -61,10 +62,8 @@ export default function WorkloadRequest() {
         cluster: form.cluster,
       })
 
-      const requestId = workloadResponse.data.id
-      const assessmentResponse = await assessmentAPI.run(requestId)
-      const assessmentId = assessmentResponse.data.id
-
+      // Grab assessment_id from response and navigate to detail page
+      const assessmentId = response.data.assessment_id
       navigate(`/assessments/${assessmentId}`)
 
     } catch (err: any) {
@@ -82,14 +81,12 @@ export default function WorkloadRequest() {
         <div className="text-sm font-bold text-slate-800 mb-1">New Workload Request</div>
         <div className="text-xs text-slate-400 mb-6">Fill in the details below. VPC estimate updates live as you type.</div>
 
-        {/* Error */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-xs text-red-600 font-semibold mb-4">
             {error}
           </div>
         )}
 
-        {/* Workload Name */}
         <div className="mb-4">
           <label className="block text-xs font-semibold text-slate-700 mb-1">
             Workload Name <span className="text-red-500">*</span>
@@ -103,7 +100,6 @@ export default function WorkloadRequest() {
           />
         </div>
 
-        {/* Product + Cluster */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -139,7 +135,6 @@ export default function WorkloadRequest() {
           </div>
         </div>
 
-        {/* CPU + Date */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -171,7 +166,6 @@ export default function WorkloadRequest() {
           </div>
         </div>
 
-        {/* Justification */}
         <div className="mb-6">
           <label className="block text-xs font-semibold text-slate-700 mb-1">
             Business Justification <span className="text-red-500">*</span>
@@ -186,7 +180,6 @@ export default function WorkloadRequest() {
           />
         </div>
 
-        {/* Buttons */}
         <div className="flex gap-2">
           <button
             onClick={handleSubmit}
@@ -208,7 +201,6 @@ export default function WorkloadRequest() {
       <div className="space-y-4">
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
           <div className="text-xs font-bold text-blue-700 mb-4">📊 Live Capacity Preview</div>
-
           <div className="space-y-3">
             <div className="flex justify-between items-center py-2 border-b border-blue-100">
               <span className="text-xs text-slate-500">Selected Cluster Usage</span>
@@ -231,8 +223,6 @@ export default function WorkloadRequest() {
               </span>
             </div>
           </div>
-
-          {/* VPC Result */}
           <div className="bg-slate-800 rounded-xl p-4 mt-4 text-center">
             <div className="text-xs text-slate-400 uppercase tracking-wider">Estimated VPCs Required</div>
             <div className="text-4xl font-extrabold text-white mt-2">
@@ -246,7 +236,6 @@ export default function WorkloadRequest() {
           </div>
         </div>
 
-        {/* Ratio Reference */}
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="text-xs font-bold text-slate-700 mb-3">IBM Ratio Reference</div>
           <table className="w-full text-xs">

@@ -30,7 +30,7 @@ function App() {
           <Route path="monitoring" element={<LicenseMonitoring />} />
           <Route path="request" element={<WorkloadRequest />} />
           <Route path="assessments" element={<Assessments />} />
-          <Route path="assessment/:id" element={<AssessmentDetail />} />
+          <Route path="assessments/:id" element={<AssessmentDetail />} />
           <Route path="approvals" element={<Approvals />} />
           <Route path="reports" element={<Reports />} />
           <Route path="users" element={<UserManagement />} />

@@ -129,7 +129,7 @@ export const assessmentAPI = {
     page_size?: number
   }) => pratikApi.get('/assessments', { params }),
   getById: (id: string) => pratikApi.get(`/assessments/${id}`),
-  run: (requestId: string) => pratikApi.post('/assessments', { request_id: requestId }),
+  // run() removed — POST /workload-requests handles everything now
 }
 
 

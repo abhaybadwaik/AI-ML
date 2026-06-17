@@ -1,35 +1,15 @@
 import { useState, useEffect } from 'react'
-import api from '../services/api'
+import { approvalAPI } from '../services/api'
 
 interface Approval {
-  id: string
-  assessment_id: string
-  workload_name: string
-  submitted_by: string
-  product: string
-  cluster: string
-  required_vpc: number
-  projected_usage: number
-  risk_level: string
-  recommendation: string
+  id: number
+  assessment_id: number
   status: string
-  submitted_date: string
-  decided_by?: string
-  comments?: string
-  decision_date?: string
-}
-
-const riskColor: Record<string, string> = {
-  Low: 'bg-green-100 text-green-700',
-  Medium: 'bg-amber-100 text-amber-700',
-  High: 'bg-red-100 text-red-700',
-  Critical: 'bg-red-200 text-red-800',
-}
-
-const recommendationColor: Record<string, string> = {
-  Proceed: 'bg-green-100 text-green-700',
-  Hold: 'bg-amber-100 text-amber-700',
-  Reject: 'bg-red-100 text-red-700',
+  requested_by: string
+  requested_at: string
+  reviewed_by: string | null
+  reviewed_at: string | null
+  comments: string | null
 }
 
 function Badge({ label, colorClass }: { label: string; colorClass: string }) {
@@ -40,13 +20,21 @@ function Badge({ label, colorClass }: { label: string; colorClass: string }) {
   )
 }
 
+const statusColor: Record<string, string> = {
+  pending: 'bg-amber-100 text-amber-700',
+  approved: 'bg-green-100 text-green-700',
+  rejected: 'bg-red-100 text-red-700',
+}
+
 export default function Approvals() {
   const [approvals, setApprovals] = useState<Approval[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [activeTab, setActiveTab] = useState('pending')
   const [selectedApproval, setSelectedApproval] = useState<Approval | null>(null)
   const [comments, setComments] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
+  const [actionError, setActionError] = useState('')
 
   useEffect(() => {
     fetchApprovals()
@@ -55,10 +43,14 @@ export default function Approvals() {
   const fetchApprovals = async () => {
     try {
       setLoading(true)
-      const response = await api.get('/approvals')
-      setApprovals(response.data)
+      setError('')
+      const response = await approvalAPI.getAll()
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data.items ?? response.data.results ?? []
+      setApprovals(data)
     } catch (err) {
-      console.error('Failed to load approvals:', err)
+      setError('Failed to load approvals.')
     } finally {
       setLoading(false)
     }
@@ -67,19 +59,18 @@ export default function Approvals() {
   const handleAction = async (action: 'approve' | 'reject') => {
     if (!selectedApproval) return
     setActionLoading(true)
+    setActionError('')
     try {
-      await api.patch(`/approvals/${selectedApproval.id}`, {
-        status: action === 'approve' ? 'approved' : 'rejected',
-        comments,
-        decided_by: 'abhay.admin',
-        decision_date: new Date().toLocaleDateString('en-GB'),
-      })
+      if (action === 'approve') {
+        await approvalAPI.approve(selectedApproval.id)
+      } else {
+        await approvalAPI.reject(selectedApproval.id, comments)
+      }
       await fetchApprovals()
       setSelectedApproval(null)
       setComments('')
-      alert(`✓ ${action === 'approve' ? 'Approved' : 'Rejected'} successfully!\nEmail notification sent to ${selectedApproval.submitted_by}`)
-    } catch (err) {
-      alert('Action failed. Please try again.')
+    } catch (err: any) {
+      setActionError(err.response?.data?.detail || 'Action failed. Please try again.')
     } finally {
       setActionLoading(false)
     }
@@ -117,9 +108,6 @@ export default function Approvals() {
           >
             ↺ Refresh
           </button>
-          <button className="px-3 py-1.5 text-xs font-semibold border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">
-            Export to Excel
-          </button>
         </div>
       </div>
 
@@ -140,6 +128,14 @@ export default function Approvals() {
         ))}
       </div>
 
+      {/* Error */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-600 font-semibold">
+          {error}
+          <button onClick={fetchApprovals} className="ml-3 underline">Retry</button>
+        </div>
+      )}
+
       {/* Loading */}
       {loading && (
         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
@@ -152,13 +148,13 @@ export default function Approvals() {
       )}
 
       {/* Table */}
-      {!loading && (
+      {!loading && !error && (
         <div className="bg-white rounded-xl border border-slate-200">
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-slate-100">
-                  {['Workload', 'Submitted By', 'Product', 'Cluster', 'Req. VPCs', 'Projected', 'Risk', 'Recommendation', 'Date', 'Action'].map(h => (
+                  {['ID', 'Assessment ID', 'Requested By', 'Status', 'Requested At', 'Reviewed By', 'Reviewed At', 'Action'].map(h => (
                     <th key={h} className="text-left py-3 px-4 text-slate-400 font-bold uppercase tracking-wide whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -166,26 +162,33 @@ export default function Approvals() {
               <tbody>
                 {activeList.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="py-12 text-center text-slate-400 font-semibold">
+                    <td colSpan={8} className="py-12 text-center text-slate-400 font-semibold">
                       No records found.
                     </td>
                   </tr>
                 ) : (
                   activeList.map(a => (
                     <tr key={a.id} className="border-b border-slate-50 hover:bg-slate-50">
-                      <td className="py-3 px-4 font-semibold text-slate-800">{a.workload_name}</td>
-                      <td className="py-3 px-4 text-slate-500">{a.submitted_by}</td>
-                      <td className="py-3 px-4 text-slate-500">{a.product}</td>
-                      <td className="py-3 px-4 text-slate-500">{a.cluster}</td>
-                      <td className="py-3 px-4 font-bold text-slate-800">{a.required_vpc}</td>
-                      <td className="py-3 px-4 text-slate-600">{a.projected_usage}</td>
-                      <td className="py-3 px-4"><Badge label={a.risk_level} colorClass={riskColor[a.risk_level] || 'bg-slate-100 text-slate-600'} /></td>
-                      <td className="py-3 px-4"><Badge label={a.recommendation} colorClass={recommendationColor[a.recommendation] || 'bg-slate-100 text-slate-600'} /></td>
-                      <td className="py-3 px-4 text-slate-400">{a.submitted_date}</td>
+                      <td className="py-3 px-4 text-blue-600 font-bold">{a.id}</td>
+                      <td className="py-3 px-4 text-slate-500">#{a.assessment_id}</td>
+                      <td className="py-3 px-4 font-semibold text-slate-800">{a.requested_by}</td>
+                      <td className="py-3 px-4">
+                        <Badge
+                          label={a.status.charAt(0).toUpperCase() + a.status.slice(1)}
+                          colorClass={statusColor[a.status] || 'bg-slate-100 text-slate-600'}
+                        />
+                      </td>
+                      <td className="py-3 px-4 text-slate-400">
+                        {new Date(a.requested_at).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 px-4 text-slate-500">{a.reviewed_by ?? '—'}</td>
+                      <td className="py-3 px-4 text-slate-400">
+                        {a.reviewed_at ? new Date(a.reviewed_at).toLocaleDateString() : '—'}
+                      </td>
                       <td className="py-3 px-4">
                         {a.status === 'pending' ? (
                           <button
-                            onClick={() => { setSelectedApproval(a); setComments('') }}
+                            onClick={() => { setSelectedApproval(a); setComments(''); setActionError('') }}
                             className="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700"
                           >
                             Review
@@ -212,19 +215,19 @@ export default function Approvals() {
           <div className="fixed right-0 top-0 bottom-0 w-96 bg-white border-l border-slate-200 z-50 overflow-y-auto shadow-2xl">
             <div className="p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <div className="text-sm font-bold text-slate-800">Assessment Review</div>
+                <div className="text-sm font-bold text-slate-800">Review Approval</div>
                 <button onClick={() => setSelectedApproval(null)} className="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
               </div>
-              <div className="text-xs text-slate-400">{selectedApproval.assessment_id} · {selectedApproval.workload_name}</div>
+
+              <div className="text-xs text-slate-400">
+                Approval #{selectedApproval.id} · Assessment #{selectedApproval.assessment_id}
+              </div>
 
               <div className="bg-slate-50 rounded-lg p-4 space-y-3">
                 {[
-                  ['Product', selectedApproval.product],
-                  ['Cluster', selectedApproval.cluster],
-                  ['Required VPCs', String(selectedApproval.required_vpc)],
-                  ['Projected Usage', `${selectedApproval.projected_usage} VPCs`],
-                  ['Recommendation', selectedApproval.recommendation],
-                  ['Risk Level', selectedApproval.risk_level],
+                  ['Requested By', selectedApproval.requested_by],
+                  ['Status', selectedApproval.status],
+                  ['Requested At', new Date(selectedApproval.requested_at).toLocaleString()],
                 ].map(([label, value]) => (
                   <div key={label} className="flex justify-between items-center pb-2 border-b border-slate-200 last:border-0">
                     <span className="text-xs text-slate-500">{label}</span>
@@ -233,8 +236,16 @@ export default function Approvals() {
                 ))}
               </div>
 
+              {actionError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-600 font-semibold">
+                  {actionError}
+                </div>
+              )}
+
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-2">Approver Comments</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-2">
+                  Comments <span className="text-slate-400 font-normal">(required for rejection)</span>
+                </label>
                 <textarea
                   value={comments}
                   onChange={e => setComments(e.target.value)}
@@ -250,19 +261,16 @@ export default function Approvals() {
                   disabled={actionLoading}
                   className="flex-1 py-2.5 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 disabled:opacity-50"
                 >
-                  ✓ Approve
+                  {actionLoading ? '...' : '✓ Approve'}
                 </button>
                 <button
                   onClick={() => handleAction('reject')}
-                  disabled={actionLoading}
+                  disabled={actionLoading || !comments.trim()}
                   className="flex-1 py-2.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 disabled:opacity-50"
                 >
-                  ✗ Reject
+                  {actionLoading ? '...' : '✗ Reject'}
                 </button>
               </div>
-              <button className="w-full py-2 border border-slate-200 text-slate-500 text-xs font-semibold rounded-lg hover:bg-slate-50">
-                📧 Request More Info
-              </button>
             </div>
           </div>
         </>

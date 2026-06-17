@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import api from '../services/api'
+import { assessmentAPI, approvalAPI } from '../services/api'
 import AIAssessmentSummary from '../components/ui/AIAssessmentSummary'
 
 interface Assessment {
@@ -62,6 +62,9 @@ export default function AssessmentDetail() {
   const [assessment, setAssessment] = useState<Assessment | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   useEffect(() => {
     fetchAssessment()
@@ -71,12 +74,29 @@ export default function AssessmentDetail() {
     try {
       setLoading(true)
       setError('')
-      const response = await api.get(`/assessments/${id}`)
+      const response = await assessmentAPI.getById(id!)
       setAssessment(response.data)
     } catch (err) {
       setError('Failed to load assessment details.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSubmitForApproval = async () => {
+    if (!assessment) return
+    setSubmitting(true)
+    setSubmitError('')
+    setSubmitSuccess(false)
+    try {
+      const user = JSON.parse(localStorage.getItem('cp4i_user') || '{}')
+      await approvalAPI.create(Number(assessment.id), user.username || 'unknown')
+      setSubmitSuccess(true)
+      setTimeout(() => navigate('/approvals'), 1500)
+    } catch (err: any) {
+      setSubmitError(err.response?.data?.detail || 'Failed to submit for approval.')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -123,11 +143,29 @@ export default function AssessmentDetail() {
           <button className="px-3 py-1.5 text-xs font-semibold border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">
             Download PDF
           </button>
-          <button className="px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            Submit for Approval →
+          <button
+            onClick={handleSubmitForApproval}
+            disabled={true}
+            className="px-3 py-1.5 text-xs font-semibold bg-slate-300 text-slate-500 rounded-lg cursor-not-allowed"
+            title="Approval is automatically triggered on workload submission"          
+          >
+            ✓ Approval Auto-Submitted
+            {submitting ? 'Submitting...' : submitSuccess ? '✓ Submitted!' : 'Submit for Approval →'}
           </button>
         </div>
       </div>
+
+      {/* Submit feedback messages */}
+      {submitError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2 text-xs text-red-600 font-semibold">
+          {submitError}
+        </div>
+      )}
+      {submitSuccess && (
+        <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2 text-xs text-green-700 font-semibold">
+          ✓ Approval request submitted! Redirecting to Approvals...
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4 items-start">
 
@@ -210,7 +248,7 @@ export default function AssessmentDetail() {
                 ['Current Cluster Usage', `${assessment.current_usage} VPCs`, ''],
                 ['Required by This Workload', `+ ${assessment.required_vpc} VPCs`, ''],
                 ['Projected Usage After Approval', `${assessment.projected_usage} VPCs`, ''],
-                ['Available Headroom After', `${assessment.available_headroom} VPCs`, 'text-green-600'],
+                ['Available Headroom After', `${assessment.available_headroom} VPCs`, assessment.available_headroom < 0 ? 'text-red-600' : 'text-green-600'],
               ].map(([label, value, extra], i, arr) => (
                 <div
                   key={label}

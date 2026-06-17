@@ -1,34 +1,35 @@
-import { useState, useEffect } from 'react'
-import api from '../services/api'
+import { useState } from 'react'
+import { licenseAPI, assessmentAPI, approvalAPI } from '../services/api'
 
-interface LicenseSnapshot {
+interface Snapshot {
   id: number
   cluster: string
-  total_vpcs: number
-  last_updated: string
-  source: string
-  products: { product_name: string; measured_quantity: number; converted_quantity: number }[]
+  product_name: string
+  converted_quantity: number
+  collected_at: string
 }
 
 interface Assessment {
-  id: string
-  workload_name: string
-  product_type: string
+  id: number
+  request_id: number
+  current_usage: number
   required_vpc: number
   projected_usage: number
+  available_headroom: number
   recommendation: string
-  status: string
+  risk_level: string
   assessed_at: string
 }
 
 interface Approval {
-  id: string
-  workload_name: string
+  id: number
+  assessment_id: number
   status: string
-  decided_by?: string
-  comments?: string
-  decision_date?: string
-  submitted_date: string
+  requested_by: string
+  requested_at: string
+  reviewed_by: string | null
+  reviewed_at: string | null
+  comments: string | null
 }
 
 const recommendationColor: Record<string, string> = {
@@ -38,15 +39,16 @@ const recommendationColor: Record<string, string> = {
 }
 
 const statusColor: Record<string, string> = {
-  pending_approval: 'bg-amber-100 text-amber-700',
-  approved: 'bg-blue-100 text-blue-700',
+  pending: 'bg-amber-100 text-amber-700',
+  approved: 'bg-green-100 text-green-700',
   rejected: 'bg-red-100 text-red-700',
 }
 
-const statusLabel: Record<string, string> = {
-  pending_approval: 'Pending',
-  approved: 'Approved',
-  rejected: 'Rejected',
+const riskColor: Record<string, string> = {
+  low: 'bg-green-100 text-green-700',
+  medium: 'bg-amber-100 text-amber-700',
+  high: 'bg-red-100 text-red-700',
+  critical: 'bg-red-200 text-red-800',
 }
 
 function Badge({ label, colorClass }: { label: string; colorClass: string }) {
@@ -59,43 +61,75 @@ function Badge({ label, colorClass }: { label: string; colorClass: string }) {
 
 export default function Reports() {
   const [reportType, setReportType] = useState('license')
-  const [cluster, setCluster] = useState('all')
+  const [clusterFilter, setClusterFilter] = useState('all')
   const [dateFrom, setDateFrom] = useState('2026-05-01')
   const [dateTo, setDateTo] = useState('2026-06-30')
-  const [format, setFormat] = useState('screen')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [generated, setGenerated] = useState(false)
 
-  const [snapshots, setSnapshots] = useState<LicenseSnapshot[]>([])
+  const [snapshots, setSnapshots] = useState<Snapshot[]>([])
   const [assessments, setAssessments] = useState<Assessment[]>([])
   const [approvals, setApprovals] = useState<Approval[]>([])
 
   const handleGenerate = async () => {
     setLoading(true)
     setGenerated(false)
+    setError('')
     try {
       const [snapRes, assRes, appRes] = await Promise.all([
-        api.get('/license-snapshots'),
-        api.get('/assessments'),
-        api.get('/approvals'),
+        licenseAPI.getSnapshots(),
+        assessmentAPI.getAll(),
+        approvalAPI.getAll(),
       ])
-      setSnapshots(snapRes.data)
-      setAssessments(assRes.data)
-      setApprovals(appRes.data)
-      setGenerated(true)
 
-      if (format === 'pdf') alert('Downloading PDF...\nGET /reports?type=' + reportType + '&format=pdf')
-      if (format === 'excel') alert('Downloading Excel...\nGET /reports?type=' + reportType + '&format=excel')
+      const snapData = Array.isArray(snapRes.data) ? snapRes.data : []
+      const assData = Array.isArray(assRes.data) ? assRes.data : assRes.data.items ?? []
+      const appData = Array.isArray(appRes.data) ? appRes.data : appRes.data.items ?? []
+
+      setSnapshots(snapData)
+      setAssessments(assData)
+      setApprovals(appData)
+      setGenerated(true)
     } catch (err) {
-      alert('Failed to generate report.')
+      setError('Failed to generate report. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
-  const filteredSnapshots = cluster === 'all'
+  const handleClear = () => {
+    setReportType('license')
+    setClusterFilter('all')
+    setDateFrom('2026-05-01')
+    setDateTo('2026-06-30')
+    setGenerated(false)
+    setError('')
+  }
+
+  // Filter snapshots by cluster
+  const filteredSnapshots = clusterFilter === 'all'
     ? snapshots
-    : snapshots.filter(s => s.cluster === cluster)
+    : snapshots.filter(s => s.cluster === clusterFilter)
+
+  // Group snapshots by cluster for license report
+  const groupedSnapshots = filteredSnapshots.reduce((acc, s) => {
+    if (!acc[s.cluster]) acc[s.cluster] = []
+    acc[s.cluster].push(s)
+    return acc
+  }, {} as Record<string, Snapshot[]>)
+
+  // Filter assessments by date
+  const filteredAssessments = assessments.filter(a => {
+    const date = a.assessed_at?.substring(0, 10)
+    return (!dateFrom || date >= dateFrom) && (!dateTo || date <= dateTo)
+  })
+
+  // Filter approvals by date
+  const filteredApprovals = approvals.filter(a => {
+    const date = a.requested_at?.substring(0, 10)
+    return (!dateFrom || date >= dateFrom) && (!dateTo || date <= dateTo)
+  })
 
   return (
     <div className="space-y-4">
@@ -103,7 +137,7 @@ export default function Reports() {
       {/* Filter Card */}
       <div className="bg-white rounded-xl border border-slate-200 p-5">
         <div className="text-sm font-bold text-slate-800 mb-4">Report Filters</div>
-        <div className="grid grid-cols-5 gap-4 items-end">
+        <div className="grid grid-cols-4 gap-4 items-end">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">Report Type</label>
             <select
@@ -120,13 +154,13 @@ export default function Reports() {
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">Cluster</label>
             <select
-              value={cluster}
-              onChange={e => setCluster(e.target.value)}
+              value={clusterFilter}
+              onChange={e => setClusterFilter(e.target.value)}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-500"
             >
               <option value="all">All Clusters</option>
               <option value="prod">Production</option>
-              <option value="nonprod">Non-Production</option>
+              <option value="non-prod">Non-Production</option>
               <option value="dr">DR</option>
             </select>
           </div>
@@ -146,18 +180,6 @@ export default function Reports() {
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-500"
             />
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Format</label>
-            <select
-              value={format}
-              onChange={e => setFormat(e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-500"
-            >
-              <option value="screen">View on Screen</option>
-              <option value="pdf">Download PDF</option>
-              <option value="excel">Download Excel</option>
-            </select>
-          </div>
         </div>
         <div className="flex gap-2 mt-4">
           <button
@@ -168,25 +190,20 @@ export default function Reports() {
             {loading ? 'Generating...' : 'Generate Report'}
           </button>
           <button
-            onClick={() => alert('Downloading PDF...')}
-            className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50"
-          >
-            Download PDF
-          </button>
-          <button
-            onClick={() => alert('Downloading Excel...')}
-            className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50"
-          >
-            Download Excel
-          </button>
-          <button
-            onClick={() => { setReportType('license'); setCluster('all'); setFormat('screen'); setGenerated(false) }}
+            onClick={handleClear}
             className="px-4 py-2 text-slate-400 text-xs font-bold rounded-lg hover:bg-slate-50 ml-auto"
           >
             Clear Filters
           </button>
         </div>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-600 font-semibold">
+          {error}
+        </div>
+      )}
 
       {/* Loading */}
       {loading && (
@@ -200,120 +217,150 @@ export default function Reports() {
         </div>
       )}
 
-      {/* Report Preview */}
+      {/* Report Output */}
       {generated && !loading && (
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-sm font-bold text-slate-800">
-              {reportType === 'license' && 'License Usage Report'}
-              {reportType === 'assessment' && 'Assessment Report'}
-              {reportType === 'approval' && 'Approval History Report'}
-              {reportType === 'consolidated' && 'Consolidated Report'}
-              {' '}— {cluster === 'all' ? 'All Clusters' : cluster}
-            </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-6">
+
+          <div className="text-sm font-bold text-slate-800">
+            {reportType === 'license' && 'License Usage Report'}
+            {reportType === 'assessment' && 'Assessment Report'}
+            {reportType === 'approval' && 'Approval History'}
+            {reportType === 'consolidated' && 'Consolidated Report'}
+            {' '}— {clusterFilter === 'all' ? 'All Clusters' : clusterFilter} · {dateFrom} to {dateTo}
           </div>
 
-          {/* License Usage */}
+          {/* LICENSE */}
           {(reportType === 'license' || reportType === 'consolidated') && (
-            <div className="mb-6">
+            <div>
               {reportType === 'consolidated' && (
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">License Usage</div>
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">License Usage</div>
               )}
-              <div className="overflow-x-auto">
+              {Object.keys(groupedSnapshots).length === 0 ? (
+                <div className="text-xs text-slate-400 py-4">No license data found.</div>
+              ) : (
+                Object.entries(groupedSnapshots).map(([clusterKey, products]) => (
+                  <div key={clusterKey} className="mb-4">
+                    <div className="text-xs font-bold text-slate-600 mb-2 capitalize">{clusterKey}</div>
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-100">
+                          {['Product', 'VPCs Used', 'Collected At'].map(h => (
+                            <th key={h} className="text-left py-2 px-3 text-slate-400 font-bold uppercase tracking-wide">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {products.map(p => (
+                          <tr key={p.id} className="border-b border-slate-50 hover:bg-slate-50">
+                            <td className="py-2 px-3 font-semibold text-slate-800">{p.product_name}</td>
+                            <td className="py-2 px-3 font-bold text-blue-600">{p.converted_quantity}</td>
+                            <td className="py-2 px-3 text-slate-500">
+                              {new Date(p.collected_at).toLocaleDateString()}
+                            </td>
+                          </tr>
+                        ))}
+                        <tr className="bg-slate-50 font-bold">
+                          <td className="py-2 px-3 text-slate-800">Total</td>
+                          <td className="py-2 px-3 text-slate-800">
+                            {products.reduce((s, p) => s + p.converted_quantity, 0)}
+                          </td>
+                          <td />
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* ASSESSMENTS */}
+          {(reportType === 'assessment' || reportType === 'consolidated') && (
+            <div>
+              {reportType === 'consolidated' && (
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 mt-2">Assessments</div>
+              )}
+              {filteredAssessments.length === 0 ? (
+                <div className="text-xs text-slate-400 py-4">No assessments found in date range.</div>
+              ) : (
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-slate-100">
-                      {['Cluster', 'Total VPCs', 'Limit', 'Last Updated', 'Source'].map(h => (
-                        <th key={h} className="text-left py-2 px-3 text-slate-400 font-bold uppercase tracking-wide">{h}</th>
+                      {['ID', 'Request ID', 'Req. VPCs', 'Current', 'Projected', 'Headroom', 'Recommendation', 'Risk', 'Date'].map(h => (
+                        <th key={h} className="text-left py-2 px-3 text-slate-400 font-bold uppercase tracking-wide whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredSnapshots.map(s => (
-                      <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50">
-                        <td className="py-2 px-3 font-semibold text-slate-800">{s.cluster}</td>
-                        <td className="py-2 px-3 font-bold text-blue-600">{s.total_vpcs}</td>
-                        <td className="py-2 px-3 text-slate-600">{s.total_vpcs}</td>
-                        <td className="py-2 px-3 text-slate-600">{s.last_updated}</td>
+                    {filteredAssessments.map(a => (
+                      <tr key={a.id} className="border-b border-slate-50 hover:bg-slate-50">
+                        <td className="py-2 px-3 text-blue-600 font-bold">{a.id}</td>
+                        <td className="py-2 px-3 text-slate-500">#{a.request_id}</td>
+                        <td className="py-2 px-3 font-bold text-slate-800">{a.required_vpc}</td>
+                        <td className="py-2 px-3 text-slate-600">{a.current_usage}</td>
+                        <td className="py-2 px-3 text-slate-600">{a.projected_usage}</td>
+                        <td className={`py-2 px-3 font-bold ${a.available_headroom < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {a.available_headroom}
+                        </td>
                         <td className="py-2 px-3">
-                          <span className="bg-slate-100 text-slate-500 text-xs font-bold px-2 py-0.5 rounded">{s.source}</span>
+                          <Badge label={a.recommendation} colorClass={recommendationColor[a.recommendation] || 'bg-slate-100 text-slate-600'} />
+                        </td>
+                        <td className="py-2 px-3">
+                          <Badge label={a.risk_level} colorClass={riskColor[a.risk_level?.toLowerCase()] || 'bg-slate-100 text-slate-600'} />
+                        </td>
+                        <td className="py-2 px-3 text-slate-400">
+                          {new Date(a.assessed_at).toLocaleDateString()}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
-            </div>
-          )}
-
-          {/* Assessment Report */}
-          {(reportType === 'assessment' || reportType === 'consolidated') && (
-            <div className="mb-6">
-              {reportType === 'consolidated' && (
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3 mt-4">Assessments</div>
               )}
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-100">
-                      {['Date', 'Workload', 'Product', 'Req. VPC', 'Projected', 'Recommendation', 'Status'].map(h => (
-                        <th key={h} className="text-left py-2 px-3 text-slate-400 font-bold uppercase tracking-wide">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {assessments.map(a => (
-                      <tr key={a.id} className="border-b border-slate-50 hover:bg-slate-50">
-                        <td className="py-2 px-3 text-slate-600">{a.assessed_at}</td>
-                        <td className="py-2 px-3 font-semibold text-slate-800">{a.workload_name}</td>
-                        <td className="py-2 px-3 text-slate-600">{a.product_type}</td>
-                        <td className="py-2 px-3 font-bold text-slate-800">{a.required_vpc}</td>
-                        <td className="py-2 px-3 text-slate-600">{a.projected_usage}</td>
-                        <td className="py-2 px-3"><Badge label={a.recommendation} colorClass={recommendationColor[a.recommendation] || 'bg-slate-100 text-slate-600'} /></td>
-                        <td className="py-2 px-3"><Badge label={statusLabel[a.status] || a.status} colorClass={statusColor[a.status] || 'bg-slate-100 text-slate-600'} /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
             </div>
           )}
 
-          {/* Approval History */}
+          {/* APPROVALS */}
           {(reportType === 'approval' || reportType === 'consolidated') && (
             <div>
               {reportType === 'consolidated' && (
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3 mt-4">Approval History</div>
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 mt-2">Approval History</div>
               )}
-              <div className="overflow-x-auto">
+              {filteredApprovals.length === 0 ? (
+                <div className="text-xs text-slate-400 py-4">No approvals found in date range.</div>
+              ) : (
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-slate-100">
-                      {['Date', 'Workload', 'Decision', 'Decided By', 'Comments'].map(h => (
-                        <th key={h} className="text-left py-2 px-3 text-slate-400 font-bold uppercase tracking-wide">{h}</th>
+                      {['ID', 'Assessment ID', 'Requested By', 'Status', 'Reviewed By', 'Comments', 'Date'].map(h => (
+                        <th key={h} className="text-left py-2 px-3 text-slate-400 font-bold uppercase tracking-wide whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {approvals.map(a => (
+                    {filteredApprovals.map(a => (
                       <tr key={a.id} className="border-b border-slate-50 hover:bg-slate-50">
-                        <td className="py-2 px-3 text-slate-600">{a.decision_date || a.submitted_date}</td>
-                        <td className="py-2 px-3 font-semibold text-slate-800">{a.workload_name}</td>
+                        <td className="py-2 px-3 text-blue-600 font-bold">{a.id}</td>
+                        <td className="py-2 px-3 text-slate-500">#{a.assessment_id}</td>
+                        <td className="py-2 px-3 font-semibold text-slate-800">{a.requested_by}</td>
                         <td className="py-2 px-3">
                           <Badge
-                            label={statusLabel[a.status] || a.status}
+                            label={a.status.charAt(0).toUpperCase() + a.status.slice(1)}
                             colorClass={statusColor[a.status] || 'bg-slate-100 text-slate-600'}
                           />
                         </td>
-                        <td className="py-2 px-3 text-slate-600">{a.decided_by || '—'}</td>
-                        <td className="py-2 px-3 text-slate-500">{a.comments || '—'}</td>
+                        <td className="py-2 px-3 text-slate-500">{a.reviewed_by ?? '—'}</td>
+                        <td className="py-2 px-3 text-slate-500">{a.comments ?? '—'}</td>
+                        <td className="py-2 px-3 text-slate-400">
+                          {new Date(a.requested_at).toLocaleDateString()}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
+              )}
             </div>
           )}
+
         </div>
       )}
     </div>

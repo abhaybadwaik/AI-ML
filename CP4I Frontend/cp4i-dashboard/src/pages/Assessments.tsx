@@ -1,17 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import api from '../services/api'
+import { assessmentAPI } from '../services/api'
 
 interface Assessment {
-  id: string
-  workload_name: string
-  product_type: string
-  cluster: string
+  id: number
+  request_id: number
+  current_usage: number
   required_vpc: number
   projected_usage: number
+  available_headroom: number
   recommendation: string
   risk_level: string
-  status: string
   assessed_at: string
 }
 
@@ -22,22 +21,10 @@ const recommendationColor: Record<string, string> = {
 }
 
 const riskColor: Record<string, string> = {
-  Low: 'bg-green-100 text-green-700',
-  Medium: 'bg-amber-100 text-amber-700',
-  High: 'bg-red-100 text-red-700',
-  Critical: 'bg-red-200 text-red-800',
-}
-
-const statusColor: Record<string, string> = {
-  pending_approval: 'bg-amber-100 text-amber-700',
-  approved: 'bg-blue-100 text-blue-700',
-  rejected: 'bg-red-100 text-red-700',
-}
-
-const statusLabel: Record<string, string> = {
-  pending_approval: 'Pending',
-  approved: 'Approved',
-  rejected: 'Rejected',
+  low: 'bg-green-100 text-green-700',
+  medium: 'bg-amber-100 text-amber-700',
+  high: 'bg-red-100 text-red-700',
+  critical: 'bg-red-200 text-red-800',
 }
 
 function Badge({ label, colorClass }: { label: string; colorClass: string }) {
@@ -53,9 +40,8 @@ export default function Assessments() {
   const [assessments, setAssessments] = useState<Assessment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [clusterFilter, setClusterFilter] = useState('all')
-  const [statusFilter, setStatusFilter] = useState('all')
   const [search, setSearch] = useState('')
+  const [recFilter, setRecFilter] = useState('all')
 
   useEffect(() => {
     fetchAssessments()
@@ -65,8 +51,11 @@ export default function Assessments() {
     try {
       setLoading(true)
       setError('')
-      const response = await api.get('/assessments')
-      setAssessments(response.data)
+      const response = await assessmentAPI.getAll()
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data.items ?? response.data.results ?? []
+      setAssessments(data)
     } catch (err) {
       setError('Failed to load assessments. Please try again.')
     } finally {
@@ -75,11 +64,9 @@ export default function Assessments() {
   }
 
   const filtered = assessments.filter(a => {
-    const matchCluster = clusterFilter === 'all' || a.cluster === clusterFilter
-    const matchStatus = statusFilter === 'all' || a.status === statusFilter
-    const matchSearch = a.workload_name.toLowerCase().includes(search.toLowerCase()) ||
-      a.id.toLowerCase().includes(search.toLowerCase())
-    return matchCluster && matchStatus && matchSearch
+    const matchRec = recFilter === 'all' || a.recommendation === recFilter
+    const matchSearch = String(a.id).includes(search) || String(a.request_id).includes(search)
+    return matchRec && matchSearch
   })
 
   return (
@@ -94,30 +81,20 @@ export default function Assessments() {
         <div className="ml-auto flex gap-2">
           <input
             type="text"
-            placeholder="Search workload or ID..."
+            placeholder="Search by ID or Request ID..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="border border-slate-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-blue-500 w-48"
           />
           <select
-            value={clusterFilter}
-            onChange={e => setClusterFilter(e.target.value)}
+            value={recFilter}
+            onChange={e => setRecFilter(e.target.value)}
             className="border border-slate-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-blue-500"
           >
-            <option value="all">All Clusters</option>
-            <option value="prod">Production</option>
-            <option value="nonprod">Non-Production</option>
-            <option value="dr">DR</option>
-          </select>
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            className="border border-slate-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-blue-500"
-          >
-            <option value="all">All Status</option>
-            <option value="pending_approval">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
+            <option value="all">All Recommendations</option>
+            <option value="Proceed">Proceed</option>
+            <option value="Hold">Hold</option>
+            <option value="Reject">Reject</option>
           </select>
           <button
             onClick={fetchAssessments}
@@ -155,7 +132,7 @@ export default function Assessments() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-slate-100">
-                  {['ID', 'Workload Name', 'Product', 'Cluster', 'Req. VPCs', 'Projected', 'Recommendation', 'Risk', 'Status', 'Date', 'Action'].map(h => (
+                  {['ID', 'Request ID', 'Current Usage', 'Req. VPCs', 'Projected', 'Headroom', 'Recommendation', 'Risk', 'Assessed At', 'Action'].map(h => (
                     <th key={h} className="text-left py-3 px-4 text-slate-400 font-bold uppercase tracking-wide whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -163,7 +140,7 @@ export default function Assessments() {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="py-12 text-center text-slate-400 font-semibold">
+                    <td colSpan={10} className="py-12 text-center text-slate-400 font-semibold">
                       No assessments found.
                     </td>
                   </tr>
@@ -171,18 +148,31 @@ export default function Assessments() {
                   filtered.map(a => (
                     <tr key={a.id} className="border-b border-slate-50 hover:bg-slate-50">
                       <td className="py-3 px-4 text-blue-600 font-bold">{a.id}</td>
-                      <td className="py-3 px-4 font-semibold text-slate-800">{a.workload_name}</td>
-                      <td className="py-3 px-4 text-slate-500">{a.product_type}</td>
-                      <td className="py-3 px-4 text-slate-500">{a.cluster}</td>
+                      <td className="py-3 px-4 text-slate-500">#{a.request_id}</td>
+                      <td className="py-3 px-4 text-slate-600">{a.current_usage}</td>
                       <td className="py-3 px-4 font-bold text-slate-800">{a.required_vpc}</td>
                       <td className="py-3 px-4 text-slate-600">{a.projected_usage}</td>
-                      <td className="py-3 px-4"><Badge label={a.recommendation} colorClass={recommendationColor[a.recommendation] || 'bg-slate-100 text-slate-600'} /></td>
-                      <td className="py-3 px-4"><Badge label={a.risk_level} colorClass={riskColor[a.risk_level] || 'bg-slate-100 text-slate-600'} /></td>
-                      <td className="py-3 px-4"><Badge label={statusLabel[a.status] || a.status} colorClass={statusColor[a.status] || 'bg-slate-100 text-slate-600'} /></td>
-                      <td className="py-3 px-4 text-slate-400">{a.assessed_at}</td>
+                      <td className={`py-3 px-4 font-bold ${a.available_headroom < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        {a.available_headroom}
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge
+                          label={a.recommendation}
+                          colorClass={recommendationColor[a.recommendation] || 'bg-slate-100 text-slate-600'}
+                        />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge
+                          label={a.risk_level}
+                          colorClass={riskColor[a.risk_level.toLowerCase()] || 'bg-slate-100 text-slate-600'}
+                        />
+                      </td>
+                      <td className="py-3 px-4 text-slate-400">
+                        {new Date(a.assessed_at).toLocaleDateString()}
+                      </td>
                       <td className="py-3 px-4">
                         <button
-                          onClick={() => navigate(`/assessment/${a.id}`)}
+                          onClick={() => navigate(`/assessments/${a.id}`)}
                           className="px-3 py-1.5 border border-blue-600 text-blue-600 text-xs font-bold rounded-lg hover:bg-blue-50 transition-colors"
                         >
                           View
